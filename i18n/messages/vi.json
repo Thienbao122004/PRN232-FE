@@ -1,0 +1,368 @@
+{
+  "common": {
+    "login": "Đăng nhập",
+    "logout": "Đăng xuất",
+    "register": "Đăng ký",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "submit": "Gửi",
+    "cancel": "Hủy",
+    "save": "Lưu",
+    "edit": "Chỉnh sửa",
+    "delete": "Xóa",
+    "search": "Tìm kiếm",
+    "filter": "Lọc",
+    "loading": "Đang tải...",
+    "noData": "Không có dữ liệu"
+  },
+  "nav": {
+    "home": "Trang chủ",
+    "dashboard": "Bảng điều khiển",
+    "booking": "Đặt xe",
+    "history": "Lịch sử",
+    "profile": "Hồ sơ",
+    "staff": "Nhân viên",
+    "admin": "Quản trị"
+  },
+  "login": {
+    "backToHome": "Quay về trang chủ",
+    "badge": "Hệ thống thuê xe điện thông minh",
+    "welcome": "Chào mừng đến với",
+    "title": "Đăng nhập",
+    "subtitle": "Trải nghiệm di chuyển xanh với hệ sinh thái xe điện hiện đại của chúng tôi",
+    "description": "Nhập thông tin của bạn để tiếp tục",
+    "googleSignIn": "Đăng nhập với Google",
+    "orEmail": "Hoặc đăng nhập bằng email",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "confirmPassword": "Xác nhận mật khẩu",
+    "fullName": "Họ và tên",
+    "remember": "Ghi nhớ đăng nhập",
+    "forgotPassword": "Quên mật khẩu?",
+    "signingIn": "Đang đăng nhập...",
+    "signingUp": "Đang đăng ký...",
+    "signIn": "Đăng nhập",
+    "noAccount": "Chưa có tài khoản?",
+    "signUp": "Đăng ký ngay",
+    "emailPlaceholder": "Nhập email của bạn",
+    "passwordPlaceholder": "Nhập mật khẩu",
+    "rememberMe": "Ghi nhớ đăng nhập",
+    "loginButton": "Đăng nhập",
+    "orContinueWith": "Hoặc tiếp tục với",
+    "googleLogin": "Đăng nhập với Google",
+    "showPassword": "Hiện mật khẩu",
+    "hidePassword": "Ẩn mật khẩu",
+    "features": {
+      "quickBooking": {
+        "time": "2 phút",
+        "label": "Đặt xe nhanh"
+      },
+      "vehicles": {
+        "count": "500+",
+        "label": "Xe điện"
+      },
+      "support": {
+        "time": "24/7",
+        "label": "Hỗ trợ"
+      }
+    },
+    "trust": {
+      "sslSecure": "Bảo mật SSL",
+      "usersCount": "10K+ người dùng"
+    },
+    "stats": {
+      "vehicles": "Xe điện",
+      "stations": "Điểm thuê",
+      "users": "Người dùng",
+      "satisfaction": "Hài lòng"
+    }
+  },
+  "home": {
+    "nav": {
+      "vehicles": "Xe điện",
+      "features": "Tính năng",
+      "howItWorks": "Cách thuê",
+      "pricing": "Bảng giá",
+      "login": "Đăng nhập",
+      "signUp": "Đăng ký ngay"
+    },
+    "hero": {
+      "badge": "Giảm 50% CO₂ - Bảo vệ môi trường",
+      "title": "Thuê xe điện",
+      "subtitle": "Dễ dàng & Nhanh chóng",
+      "description": "Hệ thống thuê xe điện hiện đại nhất Việt Nam với hơn 500 xe tại 50+ điểm thuê. Đặt xe online, nhận xe trong 5 phút.",
+      "bookNow": "Thuê xe ngay",
+      "learnMore": "Tìm hiểu thêm",
+      "customers": "Khách hàng",
+      "rating": "từ 2,000+ đánh giá",
+      "vehicleDescription": "Xe điện cao cấp, hiện đại"
+    },
+    "stats": {
+      "vehicles": "Xe điện",
+      "stations": "Điểm thuê",
+      "users": "Người dùng",
+      "co2Saved": "CO₂ tiết kiệm",
+      "battery": "Pin đầy",
+      "insurance": "Bảo hiểm",
+      "flexible": "Linh hoạt",
+      "flexibleDesc": "Theo giờ, ngày hoặc tháng"
+    },
+    "vehicles": {
+      "badge": "Đội xe hiện đại",
+      "title": "Xe điện cao cấp",
+      "description": "Đa dạng dòng xe từ hatchback đến SUV, phù hợp mọi nhu cầu di chuyển",
+      "premium": "SUV Cao cấp",
+      "urban": "SUV Đô thị",
+      "compact": "Hatchback Nhỏ gọn",
+      "from": "Từ",
+      "rentNow": "Thuê ngay"
+    },
+    "features": {
+      "badge": "Ưu điểm vượt trội",
+      "title": "Tại sao chọn EV Station?",
+      "stations": {
+        "title": "50+ Điểm thuê",
+        "description": "Mạng lưới rộng khắp cả nước"
+      },
+      "battery": {
+        "title": "Pin đầy 100%",
+        "description": "Xe luôn sẵn sàng cho hành trình"
+      },
+      "insurance": {
+        "title": "Bảo hiểm toàn diện",
+        "description": "An tâm trên mọi chặng đường"
+      },
+      "flexible": {
+        "title": "Thuê linh hoạt",
+        "description": "Theo giờ, ngày hoặc tháng"
+      }
+    },
+    "benefits": {
+      "transparent": "Không phí ẩn, minh bạch 100%",
+      "support": "Hỗ trợ 24/7 khi cần thiết",
+      "quick": "Đặt xe online trong 2 phút",
+      "cancel": "Hủy miễn phí trước 24h",
+      "rewards": "Tích điểm đổi quà hấp dẫn",
+      "maintenance": "Xe mới, bảo dưỡng định kỳ"
+    },
+    "howItWorks": {
+      "title": "Cách thức hoạt động",
+      "subtitle": "Chỉ 3 bước đơn giản để bắt đầu hành trình xanh của bạn",
+      "step1": {
+        "number": "01",
+        "title": "Đăng ký & Xác thực",
+        "description": "Tạo tài khoản, upload giấy phép lái xe. Xác thực nhanh chóng tại điểm thuê."
+      },
+      "step2": {
+        "number": "02",
+        "title": "Tìm & Đặt xe",
+        "description": "Tìm điểm thuê gần nhất trên bản đồ, chọn xe phù hợp và đặt trước hoặc đến trực tiếp."
+      },
+      "step3": {
+        "number": "03",
+        "title": "Nhận xe & Khởi hành",
+        "description": "Check-in tại quầy, ký hợp đồng điện tử và bắt đầu hành trình của bạn."
+      }
+    },
+    "testimonials": {
+      "title": "Khách hàng nói gì về chúng tôi",
+      "subtitle": "Hàng nghìn khách hàng hài lòng với dịch vụ của chúng tôi",
+      "customer1": {
+        "name": "Nguyễn Văn A",
+        "role": "Khách hàng thường xuyên",
+        "content": "Dịch vụ tuyệt vời! Xe sạch sẽ, pin đầy, nhân viên nhiệt tình. Tôi đã thuê nhiều lần và rất hài lòng."
+      },
+      "customer2": {
+        "name": "Trần Thị B",
+        "role": "Doanh nhân",
+        "content": "Tiện lợi cho công việc của tôi. Có thể đặt xe trước, nhận xe nhanh chóng. Giá cả hợp lý."
+      },
+      "customer3": {
+        "name": "Lê Văn C",
+        "role": "Du khách",
+        "content": "Trải nghiệm tuyệt vời khi du lịch. Xe điện êm ái, tiết kiệm, thân thiện môi trường."
+      }
+    },
+    "cta": {
+      "badge": "Ưu đãi đặc biệt",
+      "title": "Sẵn sàng cho hành trình xanh?",
+      "subtitle": "Đăng ký ngay hôm nay và nhận",
+      "discount": "giảm 30%",
+      "discountDesc": "cho chuyến đi đầu tiên",
+      "signUp": "Đăng ký miễn phí",
+      "contact": "Liên hệ tư vấn"
+    },
+    "footer": {
+      "description": "Hệ thống thuê xe điện hàng đầu Việt Nam. Di chuyển xanh, tương lai bền vững.",
+      "products": {
+        "title": "Sản phẩm",
+        "rental": "Thuê xe điện",
+        "stations": "Điểm thuê",
+        "pricing": "Bảng giá",
+        "app": "Ứng dụng"
+      },
+      "company": {
+        "title": "Công ty",
+        "about": "Về chúng tôi",
+        "news": "Tin tức",
+        "careers": "Tuyển dụng",
+        "contact": "Liên hệ"
+      },
+      "support": {
+        "title": "Hỗ trợ",
+        "help": "Trung tâm trợ giúp",
+        "terms": "Điều khoản",
+        "policy": "Chính sách",
+        "privacy": "Bảo mật"
+      },
+      "copyright": "© 2025 EV Station. All rights reserved."
+    },
+    "trust": {
+      "badge": "An toàn & Bảo mật",
+      "title": "Cam kết của chúng tôi",
+      "subtitle": "Bảo vệ quyền lợi và an toàn cho mọi chuyến đi",
+      "verification": {
+        "title": "Xác thực nghiêm ngặt",
+        "description": "Mọi tài xế đều được xác minh giấy phép lái xe và CMND/CCCD trước khi thuê xe"
+      },
+      "insurance": {
+        "title": "Bảo hiểm toàn diện",
+        "description": "Xe được bảo hiểm 100% bởi các công ty bảo hiểm uy tín hàng đầu"
+      },
+      "support": {
+        "title": "Hỗ trợ 24/7",
+        "description": "Đội ngũ hỗ trợ luôn sẵn sàng giúp bạn mọi lúc, mọi nơi"
+      },
+      "secure": {
+        "title": "Thanh toán an toàn",
+        "description": "Hệ thống thanh toán được mã hóa SSL, bảo mật tuyệt đối"
+      }
+    },
+    "map": {
+      "badge": "Tìm điểm thuê",
+      "title": "50+ điểm thuê trên toàn quốc",
+      "subtitle": "Tìm điểm thuê gần bạn nhất",
+      "findStation": "Tìm điểm thuê gần nhất",
+      "viewAll": "Xem tất cả điểm thuê",
+      "available": "xe có sẵn"
+    },
+    "faq": {
+      "badge": "Câu hỏi thường gặp",
+      "title": "Câu hỏi thường gặp",
+      "subtitle": "Tất cả những gì bạn cần biết về việc thuê xe điện",
+      "q1": {
+        "question": "Làm thế nào để thuê xe?",
+        "answer": "Bạn có thể đăng ký tài khoản, xác thực giấy phép lái xe, sau đó tìm điểm thuê gần nhất và đặt xe trực tuyến hoặc đến trực tiếp tại điểm thuê."
+      },
+      "q2": {
+        "question": "Cần những giấy tờ gì để thuê xe?",
+        "answer": "Bạn cần có giấy phép lái xe hợp lệ, CMND/CCCD và thẻ thanh toán. Tất cả sẽ được xác thực tại điểm thuê."
+      },
+      "q3": {
+        "question": "Chi phí thuê xe như thế nào?",
+        "answer": "Chi phí phụ thuộc vào loại xe và thời gian thuê. Giá dao động từ 450.000đ đến 800.000đ mỗi ngày. Thuê theo giờ hoặc tháng sẽ có giá ưu đãi hơn."
+      },
+      "q4": {
+        "question": "Có thể hủy đặt xe không?",
+        "answer": "Có, bạn có thể hủy miễn phí trước 24 giờ kể từ thời điểm nhận xe. Sau đó sẽ tính phí hủy theo quy định."
+      },
+      "q5": {
+        "question": "Xe có bảo hiểm không?",
+        "answer": "Tất cả xe đều được bảo hiểm toàn diện. Bạn sẽ được hướng dẫn chi tiết về bảo hiểm khi nhận xe."
+      },
+      "q6": {
+        "question": "Điều gì xảy ra nếu xe hết pin?",
+        "answer": "Tất cả xe đều được giao với pin đầy 100%. Nếu có vấn đề, hãy liên hệ hotline 24/7 để được hỗ trợ ngay lập tức."
+      }
+    }
+  },
+  "dashboard": {
+    "welcome": "Xin chào",
+    "overview": "Tổng quan",
+    "activeRentals": "Đang thuê",
+    "upcomingBookings": "Sắp tới",
+    "totalTrips": "Tổng chuyến",
+    "co2Saved": "CO₂ tiết kiệm",
+    "currentRental": "Xe đang thuê",
+    "viewDetails": "Xem chi tiết",
+    "endRental": "Kết thúc thuê",
+    "upcoming": "Sắp tới",
+    "quickActions": "Thao tác nhanh",
+    "bookVehicle": "Đặt xe mới",
+    "viewHistory": "Xem lịch sử",
+    "updateProfile": "Cập nhật hồ sơ"
+  },
+  "booking": {
+    "title": "Đặt xe điện",
+    "selectStation": "Chọn điểm thuê",
+    "availableVehicles": "Xe có sẵn",
+    "specifications": "Thông số kỹ thuật",
+    "range": "Quãng đường",
+    "seats": "Chỗ ngồi",
+    "battery": "Pin",
+    "bookNow": "Đặt ngay",
+    "perHour": "giờ",
+    "perDay": "ngày"
+  },
+  "history": {
+    "title": "Lịch sử thuê xe",
+    "rentalHistory": "Lịch sử",
+    "analytics": "Phân tích",
+    "totalTrips": "Tổng chuyến",
+    "totalDistance": "Tổng quãng đường",
+    "totalSpent": "Tổng chi phí",
+    "co2Saved": "CO₂ tiết kiệm",
+    "usagePattern": "Mẫu sử dụng",
+    "peakHours": "Giờ cao điểm",
+    "offPeakHours": "Giờ thấp điểm",
+    "completed": "Hoàn thành",
+    "viewReceipt": "Xem hóa đơn"
+  },
+  "profile": {
+    "title": "Hồ sơ của tôi",
+    "personalInfo": "Thông tin cá nhân",
+    "fullName": "Họ và tên",
+    "phone": "Số điện thoại",
+    "address": "Địa chỉ",
+    "documents": "Giấy tờ",
+    "driverLicense": "Giấy phép lái xe",
+    "idCard": "CMND/CCCD",
+    "verified": "Đã xác thực",
+    "pending": "Chờ xác thực",
+    "upload": "Tải lên",
+    "reupload": "Tải lại",
+    "saveChanges": "Lưu thay đổi"
+  },
+  "staff": {
+    "dashboard": "Bảng điều khiển nhân viên",
+    "todayStats": "Thống kê hôm nay",
+    "handovers": "Giao nhận",
+    "verifications": "Xác thực",
+    "payments": "Thanh toán",
+    "pendingTasks": "Công việc chờ xử lý",
+    "vehicleStatus": "Trạng thái xe",
+    "available": "Sẵn sàng",
+    "rented": "Đang thuê",
+    "maintenance": "Bảo trì",
+    "handover": "Giao nhận xe",
+    "pickup": "Nhận xe",
+    "return": "Trả xe",
+    "verification": "Xác thực khách hàng",
+    "payment": "Thanh toán",
+    "vehicles": "Quản lý xe"
+  },
+  "admin": {
+    "dashboard": "Bảng điều khiển quản trị",
+    "systemOverview": "Tổng quan hệ thống",
+    "totalRevenue": "Tổng doanh thu",
+    "activeRentals": "Đang thuê",
+    "totalVehicles": "Tổng số xe",
+    "totalStations": "Tổng điểm thuê",
+    "analytics": "Phân tích & Báo cáo",
+    "customers": "Quản lý khách hàng",
+    "staff": "Quản lý nhân viên",
+    "revenueByStation": "Doanh thu theo điểm",
+    "alerts": "Cảnh báo",
+    "topPerformers": "Nhân viên xuất sắc"
+  }
+}

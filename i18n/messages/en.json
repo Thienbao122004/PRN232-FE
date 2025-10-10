@@ -1,0 +1,368 @@
+{
+  "common": {
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "search": "Search",
+    "filter": "Filter",
+    "loading": "Loading...",
+    "noData": "No data available"
+  },
+  "nav": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "booking": "Booking",
+    "history": "History",
+    "profile": "Profile",
+    "staff": "Staff",
+    "admin": "Admin"
+  },
+  "login": {
+    "backToHome": "Back to Home",
+    "badge": "Smart Electric Vehicle Rental System",
+    "welcome": "Welcome to",
+    "title": "Sign In",
+    "subtitle": "Experience green mobility with our modern electric vehicle ecosystem",
+    "description": "Enter your credentials to continue",
+    "googleSignIn": "Sign in with Google",
+    "orEmail": "Or sign in with email",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "fullName": "Full Name",
+    "remember": "Remember me",
+    "forgotPassword": "Forgot password?",
+    "signingIn": "Signing in...",
+    "signingUp": "Signing up...",
+    "signIn": "Sign In",
+    "noAccount": "Don't have an account?",
+    "signUp": "Sign up now",
+    "emailPlaceholder": "Enter your email",
+    "passwordPlaceholder": "Enter your password",
+    "rememberMe": "Remember me",
+    "loginButton": "Sign In",
+    "orContinueWith": "Or continue with",
+    "googleLogin": "Sign in with Google",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "features": {
+      "quickBooking": {
+        "time": "2 mins",
+        "label": "Quick booking"
+      },
+      "vehicles": {
+        "count": "500+",
+        "label": "Electric vehicles"
+      },
+      "support": {
+        "time": "24/7",
+        "label": "Support"
+      }
+    },
+    "trust": {
+      "sslSecure": "SSL Secure",
+      "usersCount": "10K+ users"
+    },
+    "stats": {
+      "vehicles": "EV Fleet",
+      "stations": "Stations",
+      "users": "Active Users",
+      "satisfaction": "Satisfaction"
+    }
+  },
+  "home": {
+    "nav": {
+      "vehicles": "Vehicles",
+      "features": "Features",
+      "howItWorks": "How to Rent",
+      "pricing": "Pricing",
+      "login": "Login",
+      "signUp": "Sign Up Now"
+    },
+    "hero": {
+      "badge": "50% Less CO₂ - Protect Environment",
+      "title": "Rent electric vehicles",
+      "subtitle": "Easy & Fast",
+      "description": "Vietnam's most modern EV rental system with 500+ vehicles at 50+ stations. Book online, pick up in 5 minutes.",
+      "bookNow": "Rent Now",
+      "learnMore": "Learn More",
+      "customers": "Customers",
+      "rating": "from 2,000+ reviews",
+      "vehicleDescription": "Premium electric vehicle, modern"
+    },
+    "stats": {
+      "vehicles": "Electric Vehicles",
+      "stations": "Stations",
+      "users": "Users",
+      "co2Saved": "CO₂ Saved",
+      "battery": "Full Battery",
+      "insurance": "Insurance",
+      "flexible": "Flexible",
+      "flexibleDesc": "By hour, day or month"
+    },
+    "vehicles": {
+      "badge": "Modern Fleet",
+      "title": "Premium Electric Vehicles",
+      "description": "Diverse range from hatchbacks to SUVs, suitable for all mobility needs",
+      "premium": "Premium SUV",
+      "urban": "Urban SUV",
+      "compact": "Compact Hatchback",
+      "from": "From",
+      "rentNow": "Rent Now"
+    },
+    "features": {
+      "badge": "Superior Advantages",
+      "title": "Why Choose EV Station?",
+      "stations": {
+        "title": "50+ Stations",
+        "description": "Nationwide network coverage"
+      },
+      "battery": {
+        "title": "100% Full Battery",
+        "description": "Vehicles always ready for your journey"
+      },
+      "insurance": {
+        "title": "Comprehensive Insurance",
+        "description": "Peace of mind on every trip"
+      },
+      "flexible": {
+        "title": "Flexible Rental",
+        "description": "By hour, day or month"
+      }
+    },
+    "benefits": {
+      "transparent": "No hidden fees, 100% transparent",
+      "support": "24/7 support when needed",
+      "quick": "Book online in 2 minutes",
+      "cancel": "Free cancellation before 24h",
+      "rewards": "Earn points for attractive rewards",
+      "maintenance": "New vehicles, regularly maintained"
+    },
+    "howItWorks": {
+      "title": "How It Works",
+      "subtitle": "Just 3 simple steps to start your green journey",
+      "step1": {
+        "number": "01",
+        "title": "Register & Verify",
+        "description": "Create account, upload driver's license. Quick verification at station."
+      },
+      "step2": {
+        "number": "02",
+        "title": "Find & Book",
+        "description": "Find nearest station on map, choose suitable vehicle and book in advance or walk in."
+      },
+      "step3": {
+        "number": "03",
+        "title": "Pick Up & Go",
+        "description": "Check-in at counter, sign digital contract and start your journey."
+      }
+    },
+    "testimonials": {
+      "title": "What Our Customers Say",
+      "subtitle": "Thousands of satisfied customers with our service",
+      "customer1": {
+        "name": "Nguyen Van A",
+        "role": "Regular Customer",
+        "content": "Great service! Clean cars, full battery, enthusiastic staff. I've rented many times and very satisfied."
+      },
+      "customer2": {
+        "name": "Tran Thi B",
+        "role": "Entrepreneur",
+        "content": "Convenient for my work. Can book in advance, quick pickup. Reasonable price."
+      },
+      "customer3": {
+        "name": "Le Van C",
+        "role": "Tourist",
+        "content": "Wonderful experience while traveling. Electric cars are smooth, economical, environmentally friendly."
+      }
+    },
+    "cta": {
+      "badge": "Special Offer",
+      "title": "Ready for a Green Journey?",
+      "subtitle": "Sign up today and get",
+      "discount": "30% off",
+      "discountDesc": "on your first trip",
+      "signUp": "Sign Up Free",
+      "contact": "Contact Consultation"
+    },
+    "footer": {
+      "description": "Vietnam's leading electric vehicle rental system. Green mobility, sustainable future.",
+      "products": {
+        "title": "Products",
+        "rental": "EV Rental",
+        "stations": "Stations",
+        "pricing": "Pricing",
+        "app": "Mobile App"
+      },
+      "company": {
+        "title": "Company",
+        "about": "About Us",
+        "news": "News",
+        "careers": "Careers",
+        "contact": "Contact"
+      },
+      "support": {
+        "title": "Support",
+        "help": "Help Center",
+        "terms": "Terms",
+        "policy": "Policy",
+        "privacy": "Privacy"
+      },
+      "copyright": "© 2025 EV Station. All rights reserved."
+    },
+    "trust": {
+      "badge": "Safety & Security",
+      "title": "Our Commitment",
+      "subtitle": "Protecting your rights and safety for every trip",
+      "verification": {
+        "title": "Strict Verification",
+        "description": "All drivers are verified with driver's license and ID card before renting"
+      },
+      "insurance": {
+        "title": "Comprehensive Insurance",
+        "description": "Vehicles are 100% insured by leading reputable insurance companies"
+      },
+      "support": {
+        "title": "24/7 Support",
+        "description": "Our support team is always ready to help you anytime, anywhere"
+      },
+      "secure": {
+        "title": "Secure Payment",
+        "description": "SSL encrypted payment system, absolutely secure"
+      }
+    },
+    "map": {
+      "badge": "Find Station",
+      "title": "50+ stations nationwide",
+      "subtitle": "Find the nearest station to you",
+      "findStation": "Find nearest station",
+      "viewAll": "View all stations",
+      "available": "vehicles available"
+    },
+    "faq": {
+      "badge": "Frequently Asked Questions",
+      "title": "Frequently Asked Questions",
+      "subtitle": "Everything you need to know about renting electric vehicles",
+      "q1": {
+        "question": "How to rent a vehicle?",
+        "answer": "You can register an account, verify your driver's license, then find the nearest station and book online or walk in directly at the station."
+      },
+      "q2": {
+        "question": "What documents are required to rent?",
+        "answer": "You need a valid driver's license, ID card and payment card. All will be verified at the station."
+      },
+      "q3": {
+        "question": "What are the rental costs?",
+        "answer": "Costs depend on vehicle type and rental duration. Prices range from 450,000đ to 800,000đ per day. Hourly or monthly rentals will have better rates."
+      },
+      "q4": {
+        "question": "Can I cancel my booking?",
+        "answer": "Yes, you can cancel for free before 24 hours from pickup time. After that, cancellation fees apply as per regulations."
+      },
+      "q5": {
+        "question": "Are vehicles insured?",
+        "answer": "All vehicles are comprehensively insured. You will be briefed on insurance details when picking up the vehicle."
+      },
+      "q6": {
+        "question": "What if the vehicle runs out of battery?",
+        "answer": "All vehicles are delivered with 100% full battery. If there's an issue, contact our 24/7 hotline for immediate assistance."
+      }
+    }
+  },
+  "dashboard": {
+    "welcome": "Welcome",
+    "overview": "Overview",
+    "activeRentals": "Active Rentals",
+    "upcomingBookings": "Upcoming",
+    "totalTrips": "Total Trips",
+    "co2Saved": "CO₂ Saved",
+    "currentRental": "Current Rental",
+    "viewDetails": "View Details",
+    "endRental": "End Rental",
+    "upcoming": "Upcoming",
+    "quickActions": "Quick Actions",
+    "bookVehicle": "Book Vehicle",
+    "viewHistory": "View History",
+    "updateProfile": "Update Profile"
+  },
+  "booking": {
+    "title": "Book Electric Vehicle",
+    "selectStation": "Select Station",
+    "availableVehicles": "Available Vehicles",
+    "specifications": "Specifications",
+    "range": "Range",
+    "seats": "Seats",
+    "battery": "Battery",
+    "bookNow": "Book Now",
+    "perHour": "hour",
+    "perDay": "day"
+  },
+  "history": {
+    "title": "Rental History",
+    "rentalHistory": "History",
+    "analytics": "Analytics",
+    "totalTrips": "Total Trips",
+    "totalDistance": "Total Distance",
+    "totalSpent": "Total Spent",
+    "co2Saved": "CO₂ Saved",
+    "usagePattern": "Usage Pattern",
+    "peakHours": "Peak Hours",
+    "offPeakHours": "Off-Peak Hours",
+    "completed": "Completed",
+    "viewReceipt": "View Receipt"
+  },
+  "profile": {
+    "title": "My Profile",
+    "personalInfo": "Personal Information",
+    "fullName": "Full Name",
+    "phone": "Phone Number",
+    "address": "Address",
+    "documents": "Documents",
+    "driverLicense": "Driver License",
+    "idCard": "ID Card",
+    "verified": "Verified",
+    "pending": "Pending",
+    "upload": "Upload",
+    "reupload": "Re-upload",
+    "saveChanges": "Save Changes"
+  },
+  "staff": {
+    "dashboard": "Staff Dashboard",
+    "todayStats": "Today's Stats",
+    "handovers": "Handovers",
+    "verifications": "Verifications",
+    "payments": "Payments",
+    "pendingTasks": "Pending Tasks",
+    "vehicleStatus": "Vehicle Status",
+    "available": "Available",
+    "rented": "Rented",
+    "maintenance": "Maintenance",
+    "handover": "Vehicle Handover",
+    "pickup": "Pickup",
+    "return": "Return",
+    "verification": "Customer Verification",
+    "payment": "Payment",
+    "vehicles": "Vehicle Management"
+  },
+  "admin": {
+    "dashboard": "Admin Dashboard",
+    "systemOverview": "System Overview",
+    "totalRevenue": "Total Revenue",
+    "activeRentals": "Active Rentals",
+    "totalVehicles": "Total Vehicles",
+    "totalStations": "Total Stations",
+    "analytics": "Analytics & Reports",
+    "customers": "Customer Management",
+    "staff": "Staff Management",
+    "revenueByStation": "Revenue by Station",
+    "alerts": "Alerts",
+    "topPerformers": "Top Performers"
+  }
+}
