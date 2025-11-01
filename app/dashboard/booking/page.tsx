@@ -1,17 +1,56 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Zap, MapPin, Search, Filter, Battery, Users, Gauge, ChevronRight, Star, Calendar, Clock } from "lucide-react"
+import { Zap, MapPin, Search, Filter, Battery, Users, Gauge, ChevronRight, Star, Calendar, Clock, User, ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { userService, type UserProfileResponse } from "@/services/userService"
+import { API_CONFIG } from "@/lib/api-config"
+
+// Helper để tạo full URL cho image
+const getImageUrl = (path?: string) => {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+  const cleanPath = path.startsWith("/") ? path.substring(1) : path;
+  return `${API_CONFIG.USER_SERVICE_URL}/${cleanPath}`;
+}
 
 export default function BookingPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedStation, setSelectedStation] = useState<string | null>(null)
+  const [userProfile, setUserProfile] = useState<UserProfileResponse | null>(null)
+
+  useEffect(() => {
+    loadUserProfile()
+  }, [])
+
+  const loadUserProfile = async () => {
+    try {
+      const response = await userService.getCurrentProfile()
+      if (response.success && response.data) {
+        setUserProfile(response.data)
+      }
+    } catch (error) {
+      console.error("Load profile error:", error)
+    }
+  }
+
+  const getDisplayName = () => {
+    return userProfile?.fullName || "Người dùng"
+  }
+
+  const getAvatarInitials = () => {
+    const name = userProfile?.fullName || "U"
+    const words = name.split(" ")
+    if (words.length >= 2) {
+      return (words[0][0] + words[words.length - 1][0]).toUpperCase()
+    }
+    return name[0].toUpperCase()
+  }
 
   const stations = [
     { id: "1", name: "Điểm thuê Quận 1", address: "123 Nguyễn Huệ, Q1", available: 12, distance: "2.5 km" },
@@ -59,30 +98,63 @@ export default function BookingPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-surface">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50 to-blue-50">
       {/* Navigation */}
-      <nav className="bg-white border-b border-border sticky top-0 z-50">
+      <nav className="bg-white/80 backdrop-blur-lg border-b border-border/50 sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center shadow-md">
               <Zap className="w-6 h-6 text-white" />
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
               EV Station
             </span>
           </Link>
-          <Link href="/dashboard">
-            <Button variant="ghost">Quay lại Dashboard</Button>
-          </Link>
+          
+          <div className="flex items-center gap-3">
+            <Link href="/dashboard">
+              <Button variant="outline" className="gap-2 border-green-200 hover:bg-green-50 hover:border-green-300 transition-all">
+                <ArrowLeft className="w-4 h-4" />
+                Dashboard
+              </Button>
+            </Link>
+            
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-blue-50 transition-colors cursor-pointer">
+              {userProfile?.avatarUrl ? (
+                <img 
+                  src={getImageUrl(userProfile.avatarUrl)}
+                  alt={getDisplayName()}
+                  className="w-9 h-9 rounded-full object-cover shadow-md"
+                />
+              ) : (
+                <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center shadow-md">
+                  <span className="text-white text-sm font-semibold">{getAvatarInitials()}</span>
+                </div>
+              )}
+              <span className="text-sm font-medium hidden md:block">{getDisplayName()}</span>
+            </div>
+          </div>
         </div>
       </nav>
 
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2 text-balance">Đặt xe điện</h1>
-          <p className="text-muted-foreground text-lg">Tìm và đặt xe điện tại điểm thuê gần bạn</p>
-        </div>
+        <Card className="mb-8 border-0 shadow-xl bg-gradient-to-br from-green-50 to-blue-50 overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-500 to-blue-500"></div>
+          <CardContent className="p-8">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg">
+                <MapPin className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent mb-2">
+                  Đặt xe điện
+                </h1>
+                <p className="text-muted-foreground text-lg">Tìm và đặt xe điện tại điểm thuê gần bạn</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Search & Filters */}

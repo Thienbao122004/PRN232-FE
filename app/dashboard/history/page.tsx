@@ -1,58 +1,147 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Zap, MapPin, Calendar, Clock, TrendingUp, Car, Download, Filter, Battery, DollarSign } from "lucide-react"
+import { Zap, MapPin, Calendar, Clock, TrendingUp, Car, Download, Filter, Battery, DollarSign, Loader2, User, ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { rentalOrderService, type RentalOrderResponse } from "@/services/rentalOrderService"
+import { userService, type UserProfileResponse } from "@/services/userService"
+import { useToast } from "@/hooks/use-toast"
+import { API_CONFIG } from "@/lib/api-config"
+
+// Helper để tạo full URL cho image
+const getImageUrl = (path?: string) => {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+  const cleanPath = path.startsWith("/") ? path.substring(1) : path;
+  return `${API_CONFIG.USER_SERVICE_URL}/${cleanPath}`;
+}
 
 export default function HistoryPage() {
   const [selectedPeriod, setSelectedPeriod] = useState("all")
+  const [rentals, setRentals] = useState<RentalOrderResponse[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [userProfile, setUserProfile] = useState<UserProfileResponse | null>(null)
+  const { toast } = useToast()
 
-  const rentalHistory = [
-    {
-      id: "RNT-024",
-      vehicle: "VinFast VF e34",
-      station: "Điểm thuê Quận 1",
-      date: "20/01/2025",
-      duration: "8 giờ",
-      distance: 65,
-      cost: 350000,
-      status: "completed",
-    },
-    {
-      id: "RNT-023",
-      vehicle: "VinFast VF 5",
-      station: "Điểm thuê Quận 3",
-      date: "15/01/2025",
-      duration: "5 giờ",
-      distance: 42,
-      cost: 280000,
-      status: "completed",
-    },
-    {
-      id: "RNT-022",
-      vehicle: "VinFast VF 8",
-      station: "Điểm thuê Quận 7",
-      date: "10/01/2025",
-      duration: "12 giờ",
-      distance: 95,
-      cost: 450000,
-      status: "completed",
-    },
-    {
-      id: "RNT-021",
-      vehicle: "VinFast VF e34",
-      station: "Điểm thuê Quận 1",
-      date: "05/01/2025",
-      duration: "6 giờ",
-      distance: 38,
-      cost: 350000,
-      status: "completed",
-    },
-  ]
+  const getUserId = () => {
+    const userStr = localStorage.getItem('user')
+    if (userStr) {
+      const user = JSON.parse(userStr)
+      return user.userId || user.id
+    }
+    return null
+  }
+
+  useEffect(() => {
+    loadRentals()
+    loadUserProfile()
+  }, [currentPage, selectedPeriod])
+
+  const loadUserProfile = async () => {
+    try {
+      const response = await userService.getCurrentProfile()
+      if (response.success && response.data) {
+        setUserProfile(response.data)
+      }
+    } catch (error) {
+      console.error("Load profile error:", error)
+    }
+  }
+
+  const getDisplayName = () => {
+    return userProfile?.fullName || "Người dùng"
+  }
+
+  const getAvatarInitials = () => {
+    const name = userProfile?.fullName || "U"
+    const words = name.split(" ")
+    if (words.length >= 2) {
+      return (words[0][0] + words[words.length - 1][0]).toUpperCase()
+    }
+    return name[0].toUpperCase()
+  }
+
+  const loadRentals = async () => {
+    const userId = getUserId()
+    if (!userId) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Vui lòng đăng nhập lại",
+      })
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const params: any = {
+        page: currentPage,
+        pageSize: 10,
+      }
+
+      if (selectedPeriod !== "all") {
+        params.status = selectedPeriod
+      }
+
+      const response = await rentalOrderService.getRentalsByRenter(userId, params)
+      
+      if (response.success && response.data) {
+        setRentals(response.data.data)
+        setTotalPages(response.data.totalPages)
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: error instanceof Error ? error.message : "Không thể tải lịch sử",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const getStatusBadge = (status: string) => {
+    const statusMap: Record<string, { label: string; className: string }> = {
+      Pending: { label: "Chờ xử lý", className: "bg-yellow-500 text-white" },
+      Active: { label: "Đang thuê", className: "bg-green-500 text-white" },
+      Completed: { label: "Hoàn thành", className: "bg-blue-500 text-white" },
+      Cancelled: { label: "Đã hủy", className: "bg-red-500 text-white" },
+    }
+    return statusMap[status] || { label: status, className: "bg-gray-500 text-white" }
+  }
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr)
+    return date.toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    })
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(amount)
+  }
+
+  const rentalHistory = (rentals || []).map(r => ({
+    id: r.rentalId,
+    vehicle: `Xe ${r.vehicleId}`,
+    station: `Chi nhánh ${r.branchStartId}`,
+    date: formatDate(r.startTime),
+    duration: r.endTime ? `${Math.ceil((new Date(r.endTime).getTime() - new Date(r.startTime).getTime()) / (1000 * 60 * 60))} giờ` : "N/A",
+    distance: 0,
+    cost: r.actualCost || r.estimatedCost,
+    status: r.status.toLowerCase(),
+  }))
 
   const analytics = {
     totalTrips: 24,
@@ -73,30 +162,63 @@ export default function HistoryPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-surface">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-blue-50">
       {/* Navigation */}
-      <nav className="bg-white border-b border-border sticky top-0 z-50">
+      <nav className="bg-white/80 backdrop-blur-lg border-b border-border/50 sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center shadow-md">
               <Zap className="w-6 h-6 text-white" />
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
               EV Station
             </span>
           </Link>
-          <Link href="/dashboard">
-            <Button variant="ghost">Quay lại Dashboard</Button>
-          </Link>
+          
+          <div className="flex items-center gap-3">
+            <Link href="/dashboard">
+              <Button variant="outline" className="gap-2 border-purple-200 hover:bg-purple-50 hover:border-purple-300 transition-all">
+                <ArrowLeft className="w-4 h-4" />
+                Dashboard
+              </Button>
+            </Link>
+            
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-blue-50 transition-colors cursor-pointer">
+              {userProfile?.avatarUrl ? (
+                <img 
+                  src={getImageUrl(userProfile.avatarUrl)}
+                  alt={getDisplayName()}
+                  className="w-9 h-9 rounded-full object-cover shadow-md"
+                />
+              ) : (
+                <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center shadow-md">
+                  <span className="text-white text-sm font-semibold">{getAvatarInitials()}</span>
+                </div>
+              )}
+              <span className="text-sm font-medium hidden md:block">{getDisplayName()}</span>
+            </div>
+          </div>
         </div>
       </nav>
 
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2 text-balance">Lịch sử & Phân tích</h1>
-          <p className="text-muted-foreground text-lg">Xem lại các chuyến đi và thống kê cá nhân</p>
-        </div>
+        <Card className="mb-8 border-0 shadow-xl bg-gradient-to-br from-purple-50 to-blue-50 overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-purple-500 to-blue-500"></div>
+          <CardContent className="p-8">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg">
+                <Clock className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-2">
+                  Lịch sử & Phân tích
+                </h1>
+                <p className="text-muted-foreground text-lg">Xem lại các chuyến đi và thống kê cá nhân</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <Tabs defaultValue="history" className="space-y-6">
           <TabsList className="bg-white border border-border">
@@ -143,21 +265,40 @@ export default function HistoryPage() {
             </div>
 
             <div className="space-y-4">
-              {rentalHistory.map((rental) => (
-                <Card key={rental.id} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center">
-                          <Car className="w-6 h-6 text-white" />
+              {isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : rentalHistory.length === 0 ? (
+                <Card className="border-0 shadow-lg">
+                  <CardContent className="p-12 text-center">
+                    <Car className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground mb-4">Chưa có lịch sử thuê xe</p>
+                    <Link href="/dashboard/booking">
+                      <Button className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white">
+                        Đặt xe ngay
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              ) : (
+                rentalHistory.map((rental) => {
+                  const statusInfo = getStatusBadge(rental.status)
+                  return (
+                    <Card key={rental.id} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center">
+                              <Car className="w-6 h-6 text-white" />
+                            </div>
+                            <div>
+                              <div className="font-bold text-lg">{rental.vehicle}</div>
+                              <div className="text-sm text-muted-foreground">Mã: {rental.id}</div>
+                            </div>
+                          </div>
+                          <Badge className={statusInfo.className}>{statusInfo.label}</Badge>
                         </div>
-                        <div>
-                          <div className="font-bold text-lg">{rental.vehicle}</div>
-                          <div className="text-sm text-muted-foreground">Mã: {rental.id}</div>
-                        </div>
-                      </div>
-                      <Badge className="bg-green-50 text-green-700">Hoàn thành</Badge>
-                    </div>
 
                     <div className="grid md:grid-cols-4 gap-4 mb-4">
                       <div className="flex items-center gap-2">
@@ -204,7 +345,9 @@ export default function HistoryPage() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                  )
+                })
+              )}
             </div>
           </TabsContent>
 
