@@ -1,7 +1,8 @@
-// API Configuration - Chỉ có 2 services đang hoạt động
+// API Configuration - 3 services đang hoạt động
 export const API_CONFIG = {
   USER_SERVICE_URL: "http://localhost:5227",
   RENTAL_PAYMENT_SERVICE_URL: "http://localhost:5035",
+  FLEET_SERVICE_URL: "http://localhost:5142",
 };
 
 export const API_ENDPOINTS = {
@@ -52,6 +53,41 @@ export const API_ENDPOINTS = {
   ANALYTICS: {
     GET_RENTER_ANALYTICS: (renterId: string) => `${API_CONFIG.RENTAL_PAYMENT_SERVICE_URL}/api/analytics/renter/${renterId}`,
     GET_RENTER_SUMMARY: (renterId: string) => `${API_CONFIG.RENTAL_PAYMENT_SERVICE_URL}/api/analytics/renter/${renterId}/summary`,
+  },
+
+  // Vehicle & Branch (FleetService - Port 5142)
+  VEHICLES: {
+    GET_ALL: `${API_CONFIG.FLEET_SERVICE_URL}/api/Vehicle`,
+    GET_BY_ID: (vehicleId: string) => `${API_CONFIG.FLEET_SERVICE_URL}/api/Vehicle/${vehicleId}`,
+    GET_BY_STATUS: (status: string) => `${API_CONFIG.FLEET_SERVICE_URL}/api/Vehicle/status/${status}`,
+    GET_BY_TYPE: (typeId: string) => `${API_CONFIG.FLEET_SERVICE_URL}/api/Vehicle/type/${typeId}`,
+    GET_SUMMARY: `${API_CONFIG.FLEET_SERVICE_URL}/api/Vehicle/summary`,
+  },
+
+  VEHICLE_TYPES: {
+    GET_ALL: `${API_CONFIG.FLEET_SERVICE_URL}/api/TypeVehicle`,
+    GET_BY_ID: (typeId: string) => `${API_CONFIG.FLEET_SERVICE_URL}/api/TypeVehicle/${typeId}`,
+  },
+
+  BRANCHES: {
+    GET_ALL: `${API_CONFIG.FLEET_SERVICE_URL}/api/Branch`,
+    GET_BY_ID: (branchId: string) => `${API_CONFIG.FLEET_SERVICE_URL}/api/Branch/${branchId}`,
+  },
+
+  // Maintenance & Relocation (FleetService - Port 5142)
+  MAINTENANCE: {
+    CREATE: `${API_CONFIG.FLEET_SERVICE_URL}/api/Maintenance`,
+    GET_BY_ID: (id: string) => `${API_CONFIG.FLEET_SERVICE_URL}/api/Maintenance/${id}`,
+    GET_BY_VEHICLE: (vehicleId: string) => `${API_CONFIG.FLEET_SERVICE_URL}/api/Maintenance/vehicle/${vehicleId}`,
+    GET_UPCOMING: `${API_CONFIG.FLEET_SERVICE_URL}/api/Maintenance/upcoming`,
+  },
+
+  RELOCATION: {
+    CREATE: `${API_CONFIG.FLEET_SERVICE_URL}/api/Relocation`,
+    GET_BY_ID: (id: string) => `${API_CONFIG.FLEET_SERVICE_URL}/api/Relocation/${id}`,
+    GET_BY_VEHICLE: (vehicleId: string) => `${API_CONFIG.FLEET_SERVICE_URL}/api/Relocation/vehicle/${vehicleId}`,
+    GET_BY_STATUS: (status: string) => `${API_CONFIG.FLEET_SERVICE_URL}/api/Relocation/status/${status}`,
+    COMPLETE: (id: string) => `${API_CONFIG.FLEET_SERVICE_URL}/api/Relocation/${id}/complete`,
   },
 };
 

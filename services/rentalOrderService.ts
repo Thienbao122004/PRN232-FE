@@ -7,10 +7,11 @@ const RENTAL_SERVICE_URL = API_CONFIG.RENTAL_PAYMENT_SERVICE_URL;
 // ==================== TYPES ====================
 export interface CreateRentalOrderRequest {
   renterId: string;
-  vehicleId: string;
+  staffId?: string; 
+  vehicleId: string; 
   branchStartId: string;
   branchEndId: string;
-  startTime: string; // ISO datetime
+  startTime: string; 
   endTime: string;
   estimatedCost: number;
 }
@@ -24,10 +25,17 @@ export interface RentalOrderResponse {
   branchEndId: string;
   startTime: string;
   endTime?: string;
-  status: "Pending" | "Active" | "Completed" | "Cancelled";
+  status: "Pending" | "Confirmed" | "Active" | "Completed" | "Closed" | "Cancelled";
   estimatedCost: number;
   actualCost?: number;
   createdAt: string;
+}
+
+export interface RentalOrderDetailResponse {
+  id: string;  // Backend trả về "id" (lowercase)
+  vehicleId: string;
+  assignedAt: string;
+  returnedAt?: string;
 }
 
 // ==================== SERVICE ====================
@@ -115,6 +123,34 @@ export const rentalOrderService = {
     return result;
   },
 
+  // Lấy RentalOrderDetails của một RentalOrder
+  async getRentalOrderDetails(rentalId: string): Promise<ApiResponse<RentalOrderDetailResponse[]>> {
+    const token = authToken.get();
+    const response = await fetch(
+      `${RENTAL_SERVICE_URL}/api/rentals/${rentalId}/details`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.message || "Không thể lấy chi tiết đơn thuê");
+    }
+
+    // Backend trả về data trực tiếp, không có success wrapper
+    return {
+      success: true,
+      data: Array.isArray(result) ? result : [],
+      message: "Success"
+    };
+  },
+
   // Lấy lịch sử thuê xe của người thuê
   async getRentalsByRenter(
     renterId: string,
@@ -173,6 +209,30 @@ export const rentalOrderService = {
     
     if (!response.ok || !result.success) {
       throw new Error(result.message || "Không thể hủy đơn thuê");
+    }
+
+    return result;
+  },
+
+  // ✅ Cập nhật trạng thái đơn thuê
+  async updateRentalStatus(rentalId: string, status: string): Promise<ApiResponse<RentalOrderResponse>> {
+    const token = authToken.get();
+    const response = await fetch(
+      `${RENTAL_SERVICE_URL}/api/rentals/${rentalId}/status`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status }),
+      }
+    );
+
+    const result = await response.json();
+    
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || "Không thể cập nhật trạng thái");
     }
 
     return result;

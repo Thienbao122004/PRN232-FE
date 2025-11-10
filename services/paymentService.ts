@@ -9,6 +9,7 @@ export interface CreatePaymentRequest {
   rentalId: string;
   amount: number;
   paymentMethod: string; // "Cash", "CreditCard", "DebitCard", "MoMo", "ZaloPay"
+  transactionRef?: string; // Transaction reference (DEPOSIT, FINAL_PAYMENT, REFUND, etc.)
 }
 
 export interface PaymentResponse {
@@ -18,6 +19,7 @@ export interface PaymentResponse {
   paymentMethod: string;
   status: string; // "Pending", "Paid", "Failed", "Refunded"
   paymentDate?: string;
+  transactionRef?: string;
   createdAt: string;
 }
 

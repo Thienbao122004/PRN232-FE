@@ -221,10 +221,10 @@ export default function RenterDashboard() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-green-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Top Navigation */}
-      <nav className="bg-white/80 backdrop-blur-lg border-b border-border/50 fixed top-0 left-0 right-0 z-40">
-        <div className="px-6 py-4 flex items-center justify-between ml-0 lg:ml-72">
+      <nav className="bg-white border-b shadow-sm fixed top-0 left-0 right-0 z-40">
+        <div className="p-6 py-4 flex items-center justify-between ml-0 lg:ml-72">
           <div>
             <h2 className="text-xl font-bold text-foreground">Tổng quan</h2>
             <p className="text-sm text-muted-foreground">Quản lý chuyến đi của bạn</p>
@@ -235,15 +235,15 @@ export default function RenterDashboard() {
               <Bell className="w-5 h-5" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
             </Button>
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-blue-50 transition-colors cursor-pointer">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer">
               {userProfile?.avatarUrl ? (
                 <img 
                   src={getImageUrl(userProfile.avatarUrl)}
                   alt={getDisplayName()}
-                  className="w-9 h-9 rounded-full object-cover shadow-md"
+                  className="w-9 h-9 rounded-full object-cover shadow-sm"
                 />
               ) : (
-                <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center shadow-md">
+                <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center shadow-sm">
                   <span className="text-white text-sm font-semibold">{getAvatarInitials()}</span>
                 </div>
               )}
@@ -254,19 +254,19 @@ export default function RenterDashboard() {
       </nav>
 
       {/* Sidebar */}
-      <aside className="fixed left-0 top-0 bottom-0 w-72 bg-white border-r border-border/50 z-50 hidden lg:block shadow-xl">
+      <aside className="fixed left-0 top-0 bottom-0 w-72 bg-white border-r shadow-md z-50 hidden lg:block">
         <div className="h-full flex flex-col">
           {/* Logo */}
-          <div className="p-6 border-b border-border/50">
+          <div className="p-6 border-b bg-blue-600">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-green-500 rounded-2xl flex items-center justify-center shadow-lg">
-                <Zap className="w-7 h-7 text-white" />
+              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-md">
+                <Zap className="w-7 h-7 text-blue-600" />
               </div>
               <div>
-                <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent block">
+                <span className="text-xl font-bold text-white block">
                   EV Station
                 </span>
-                <span className="text-xs text-muted-foreground">Rental System</span>
+                <span className="text-xs text-blue-100">Rental System</span>
               </div>
             </div>
           </div>
@@ -278,7 +278,7 @@ export default function RenterDashboard() {
                 variant={activeTab === "overview" ? "default" : "ghost"}
                 className={`w-full justify-start h-12 text-base transition-all ${
                   activeTab === "overview" 
-                    ? "bg-gradient-to-r from-blue-500 to-green-500 text-white shadow-lg shadow-blue-500/30" 
+                    ? "bg-blue-600 text-white shadow-md" 
                     : "hover:bg-blue-50 hover:translate-x-1"
                 }`}
                 onClick={() => setActiveTab("overview")}
@@ -320,7 +320,7 @@ export default function RenterDashboard() {
           </nav>
 
           {/* Logout Section */}
-          <div className="p-4 border-t border-border/50">
+          <div className="p-4 border-t">
             <Link href="/login">
               <Button 
                 variant="ghost" 
@@ -336,11 +336,11 @@ export default function RenterDashboard() {
 
       {/* Main Content */}
       <main className="lg:ml-72 pt-24 min-h-screen">
-        <div className="px-6 py-8 max-w-[1600px] mx-auto space-y-6">
+        <div className="p-6 py-8 max-w-[1600px] mx-auto space-y-6">
             {/* Welcome Section */}
-            <div className="bg-gradient-to-br from-blue-600 to-green-600 rounded-2xl p-8 text-white shadow-lg">
+            <div className="bg-blue-600 rounded-xl p-8 text-white shadow-md">
               <h1 className="text-3xl font-bold mb-2">Xin chào, {getDisplayName()}!</h1>
-              <p className="text-blue-50 mb-6">Sẵn sàng cho hành trình xanh hôm nay?</p>
+              <p className="text-blue-100 mb-6">Sẵn sàng cho hành trình xanh hôm nay?</p>
               <Link href="/dashboard/booking">
                 <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50">
                   Đặt xe ngay
@@ -352,10 +352,10 @@ export default function RenterDashboard() {
             {/* Stats Grid */}
             <div className="grid md:grid-cols-4 gap-4">
               {statsDisplay.map((stat, index) => (
-                <Card key={index} className="border-0 shadow-lg">
+                <Card key={index} className="shadow-md">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-2">
-                      <div className={`w-10 h-10 ${stat.bg} rounded-xl flex items-center justify-center`}>
+                      <div className={`w-10 h-10 ${stat.bg} rounded-lg flex items-center justify-center`}>
                         <stat.icon className={`w-5 h-5 ${stat.color}`} />
                       </div>
                       {isLoading && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
@@ -369,14 +369,14 @@ export default function RenterDashboard() {
 
             {/* Active Rental */}
             {isLoading ? (
-              <Card className="border-0 shadow-lg">
+              <Card className="shadow-md">
                 <CardContent className="p-12 flex items-center justify-center">
                   <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
                 </CardContent>
               </Card>
             ) : activeRentals.length > 0 ? (
-              <Card className="border-0 shadow-lg border-l-4 border-l-green-500">
-                <CardHeader>
+              <Card className="shadow-md border-l-4 border-l-green-600">
+                <CardHeader className="bg-green-50 border-b">
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle>Chuyến đi đang diễn ra</CardTitle>
@@ -384,45 +384,45 @@ export default function RenterDashboard() {
                     </div>
                     <Badge className={
                       activeRentals[0].status === "Active" 
-                        ? "bg-green-500 text-white" 
-                        : "bg-yellow-500 text-white"
+                        ? "bg-green-600 text-white" 
+                        : "bg-yellow-600 text-white"
                     }>
                       {activeRentals[0].status === "Active" ? "Đang thuê" : "Chờ xử lý"}
                     </Badge>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="pt-6 space-y-4">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-3">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
                         <Car className="w-5 h-5 text-blue-600" />
                         <div>
-                          <div className="text-sm text-muted-foreground">Xe</div>
+                          <div className="text-xs text-gray-500">Xe</div>
                           <div className="font-medium">ID: {activeRentals[0].vehicleId}</div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
                         <MapPin className="w-5 h-5 text-green-600" />
                         <div>
-                          <div className="text-sm text-muted-foreground">Điểm thuê</div>
+                          <div className="text-xs text-gray-500">Điểm thuê</div>
                           <div className="font-medium">Branch: {activeRentals[0].branchStartId}</div>
                         </div>
                       </div>
                     </div>
                     <div className="space-y-3">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
                         <Clock className="w-5 h-5 text-blue-600" />
                         <div>
-                          <div className="text-sm text-muted-foreground">Thời gian</div>
+                          <div className="text-xs text-gray-500">Thời gian</div>
                           <div className="font-medium">
                             {formatTime(activeRentals[0].startTime)} - {formatTime(activeRentals[0].endTime || activeRentals[0].startTime)}
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
                         <TrendingUp className="w-5 h-5 text-green-600" />
                         <div>
-                          <div className="text-sm text-muted-foreground">Chi phí dự kiến</div>
+                          <div className="text-xs text-gray-500">Chi phí dự kiến</div>
                           <div className="font-medium">{formatCurrency(activeRentals[0].estimatedCost)}</div>
                         </div>
                       </div>
@@ -431,14 +431,14 @@ export default function RenterDashboard() {
 
                   <div className="flex gap-3">
                     <Link href={`/dashboard/rental/${activeRentals[0].rentalId}`} className="flex-1">
-                      <Button className="w-full bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white">
+                      <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
                         Xem chi tiết
                       </Button>
                     </Link>
                     {activeRentals[0].status === "Pending" && (
                       <Button 
                         variant="outline" 
-                        className="flex-1 bg-transparent"
+                        className="flex-1"
                         onClick={() => handleCancelRental(activeRentals[0].rentalId)}
                       >
                         Hủy đơn
@@ -448,76 +448,18 @@ export default function RenterDashboard() {
                 </CardContent>
               </Card>
             ) : (
-              <Card className="border-0 shadow-lg">
+              <Card className="shadow-md">
                 <CardContent className="p-12 text-center">
                   <Car className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground mb-4">Bạn chưa có chuyến đi nào đang diễn ra</p>
                   <Link href="/dashboard/booking">
-                    <Button className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white">
+                    <Button className="bg-blue-600 hover:bg-blue-700 text-white">
                       Đặt xe ngay
                     </Button>
                   </Link>
                 </CardContent>
               </Card>
             )}
-
-            {/* Upcoming Bookings */}
-            <Card className="border-0 shadow-lg">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Đặt chỗ sắp tới</CardTitle>
-                  <Link href="/dashboard/history">
-                    <Button variant="ghost" size="sm">
-                      Xem tất cả
-                      <ChevronRight className="ml-1 w-4 h-4" />
-                    </Button>
-                  </Link>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {isLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                  </div>
-                ) : upcomingBookings.length > 0 ? (
-                  upcomingBookings.map((booking) => (
-                    <div
-                      key={booking.rentalId}
-                      className="flex items-center justify-between p-4 bg-surface rounded-xl hover:bg-surface-hover transition-colors cursor-pointer"
-                      onClick={() => window.location.href = `/dashboard/rental/${booking.rentalId}`}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center">
-                          <Car className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                          <div className="font-medium">Xe ID: {booking.vehicleId}</div>
-                          <div className="text-sm text-muted-foreground flex items-center gap-2">
-                            <MapPin className="w-3 h-3" />
-                            Branch: {booking.branchStartId}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-medium">{formatDate(booking.startTime)}</div>
-                        <div className="text-sm text-muted-foreground">{formatTime(booking.startTime)}</div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-center text-muted-foreground py-8">
-                    Không có đặt chỗ sắp tới
-                  </p>
-                )}
-
-                <Link href="/dashboard/booking">
-                  <Button variant="outline" className="w-full bg-transparent">
-                    <Calendar className="mr-2 w-4 h-4" />
-                    Đặt xe mới
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
         </div>
       </main>
     </div>

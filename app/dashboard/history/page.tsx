@@ -162,36 +162,36 @@ export default function HistoryPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-blue-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Navigation */}
-      <nav className="bg-white/80 backdrop-blur-lg border-b border-border/50 sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+      <nav className="bg-white border-b shadow-sm sticky top-0 z-50">
+        <div className="w-full p-6 py-4 flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center shadow-md">
+            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm">
               <Zap className="w-6 h-6 text-white" />
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
+            <span className="text-xl font-bold text-blue-600">
               EV Station
             </span>
           </Link>
           
           <div className="flex items-center gap-3">
             <Link href="/dashboard">
-              <Button variant="outline" className="gap-2 border-purple-200 hover:bg-purple-50 hover:border-purple-300 transition-all">
+              <Button variant="outline" className="gap-2 hover:bg-blue-50 transition-all">
                 <ArrowLeft className="w-4 h-4" />
                 Dashboard
               </Button>
             </Link>
             
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-blue-50 transition-colors cursor-pointer">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer">
               {userProfile?.avatarUrl ? (
                 <img 
                   src={getImageUrl(userProfile.avatarUrl)}
                   alt={getDisplayName()}
-                  className="w-9 h-9 rounded-full object-cover shadow-md"
+                  className="w-9 h-9 rounded-full object-cover shadow-sm"
                 />
               ) : (
-                <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center shadow-md">
+                <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center shadow-sm">
                   <span className="text-white text-sm font-semibold">{getAvatarInitials()}</span>
                 </div>
               )}
@@ -201,17 +201,16 @@ export default function HistoryPage() {
         </div>
       </nav>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="w-full p-6 py-8">
         {/* Header */}
-        <Card className="mb-8 border-0 shadow-xl bg-gradient-to-br from-purple-50 to-blue-50 overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-purple-500 to-blue-500"></div>
+        <Card className="mb-8 shadow-md bg-purple-50 border-l-4 border-l-purple-600">
           <CardContent className="p-8">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg">
+              <div className="w-16 h-16 bg-purple-600 rounded-xl flex items-center justify-center shadow-md">
                 <Clock className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-2">
+                <h1 className="text-4xl font-bold text-purple-600 mb-2">
                   Lịch sử & Phân tích
                 </h1>
                 <p className="text-muted-foreground text-lg">Xem lại các chuyến đi và thống kê cá nhân</p>
@@ -233,31 +232,31 @@ export default function HistoryPage() {
                 <Button
                   variant={selectedPeriod === "all" ? "default" : "outline"}
                   onClick={() => setSelectedPeriod("all")}
-                  className={selectedPeriod !== "all" ? "bg-transparent" : ""}
+                  className={selectedPeriod === "all" ? "bg-blue-600 text-white" : ""}
                 >
                   Tất cả
                 </Button>
                 <Button
                   variant={selectedPeriod === "month" ? "default" : "outline"}
                   onClick={() => setSelectedPeriod("month")}
-                  className={selectedPeriod !== "month" ? "bg-transparent" : ""}
+                  className={selectedPeriod === "month" ? "bg-blue-600 text-white" : ""}
                 >
                   Tháng này
                 </Button>
                 <Button
                   variant={selectedPeriod === "year" ? "default" : "outline"}
                   onClick={() => setSelectedPeriod("year")}
-                  className={selectedPeriod !== "year" ? "bg-transparent" : ""}
+                  className={selectedPeriod === "year" ? "bg-blue-600 text-white" : ""}
                 >
                   Năm nay
                 </Button>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" className="bg-transparent">
+                <Button variant="outline">
                   <Filter className="mr-2 w-4 h-4" />
                   Bộ lọc
                 </Button>
-                <Button variant="outline" className="bg-transparent">
+                <Button variant="outline">
                   <Download className="mr-2 w-4 h-4" />
                   Xuất file
                 </Button>
@@ -270,12 +269,12 @@ export default function HistoryPage() {
                   <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
                 </div>
               ) : rentalHistory.length === 0 ? (
-                <Card className="border-0 shadow-lg">
+                <Card className="shadow-md">
                   <CardContent className="p-12 text-center">
                     <Car className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-muted-foreground mb-4">Chưa có lịch sử thuê xe</p>
                     <Link href="/dashboard/booking">
-                      <Button className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white">
+                      <Button className="bg-blue-600 hover:bg-blue-700 text-white">
                         Đặt xe ngay
                       </Button>
                     </Link>
@@ -285,11 +284,11 @@ export default function HistoryPage() {
                 rentalHistory.map((rental) => {
                   const statusInfo = getStatusBadge(rental.status)
                   return (
-                    <Card key={rental.id} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+                    <Card key={rental.id} className="shadow-md hover:shadow-lg transition-shadow">
                       <CardContent className="p-6">
                         <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center">
+                            <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
                               <Car className="w-6 h-6 text-white" />
                             </div>
                             <div>
@@ -301,28 +300,28 @@ export default function HistoryPage() {
                         </div>
 
                     <div className="grid md:grid-cols-4 gap-4 mb-4">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
                         <MapPin className="w-4 h-4 text-blue-600" />
                         <div>
                           <div className="text-xs text-muted-foreground">Điểm thuê</div>
                           <div className="text-sm font-medium">{rental.station}</div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg">
                         <Calendar className="w-4 h-4 text-green-600" />
                         <div>
                           <div className="text-xs text-muted-foreground">Ngày thuê</div>
                           <div className="text-sm font-medium">{rental.date}</div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
                         <Clock className="w-4 h-4 text-blue-600" />
                         <div>
                           <div className="text-xs text-muted-foreground">Thời gian</div>
                           <div className="text-sm font-medium">{rental.duration}</div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg">
                         <TrendingUp className="w-4 h-4 text-green-600" />
                         <div>
                           <div className="text-xs text-muted-foreground">Quãng đường</div>
@@ -334,10 +333,10 @@ export default function HistoryPage() {
                     <div className="flex items-center justify-between pt-4 border-t">
                       <div className="text-2xl font-bold text-blue-600">{rental.cost.toLocaleString()}đ</div>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="bg-transparent">
+                        <Button variant="outline" size="sm">
                           Xem chi tiết
                         </Button>
-                        <Button variant="outline" size="sm" className="bg-transparent">
+                        <Button variant="outline" size="sm">
                           <Download className="mr-2 w-4 h-4" />
                           Hóa đơn
                         </Button>
@@ -355,7 +354,7 @@ export default function HistoryPage() {
           <TabsContent value="analytics" className="space-y-6">
             {/* Summary Stats */}
             <div className="grid md:grid-cols-4 gap-4">
-              <Card className="border-0 shadow-lg">
+              <Card className="shadow-md">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-2">
                     <Car className="w-8 h-8 text-blue-600" />
@@ -364,7 +363,7 @@ export default function HistoryPage() {
                   <div className="text-sm text-muted-foreground">Tổng chuyến đi</div>
                 </CardContent>
               </Card>
-              <Card className="border-0 shadow-lg">
+              <Card className="shadow-md">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-2">
                     <TrendingUp className="w-8 h-8 text-green-600" />
@@ -373,7 +372,7 @@ export default function HistoryPage() {
                   <div className="text-sm text-muted-foreground">Tổng km đã đi</div>
                 </CardContent>
               </Card>
-              <Card className="border-0 shadow-lg">
+              <Card className="shadow-md">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-2">
                     <DollarSign className="w-8 h-8 text-blue-600" />
@@ -382,7 +381,7 @@ export default function HistoryPage() {
                   <div className="text-sm text-muted-foreground">Tổng chi phí</div>
                 </CardContent>
               </Card>
-              <Card className="border-0 shadow-lg">
+              <Card className="shadow-md">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-2">
                     <Battery className="w-8 h-8 text-green-600" />
@@ -395,12 +394,12 @@ export default function HistoryPage() {
 
             {/* Detailed Analytics */}
             <div className="grid md:grid-cols-2 gap-6">
-              <Card className="border-0 shadow-lg">
-                <CardHeader>
+              <Card className="shadow-md">
+                <CardHeader className="bg-blue-50 border-b">
                   <CardTitle>Thống kê theo tháng</CardTitle>
                   <CardDescription>Số chuyến đi và quãng đường</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-6">
                   <div className="space-y-4">
                     {monthlyStats.map((stat, index) => (
                       <div key={index} className="space-y-2">
@@ -410,9 +409,9 @@ export default function HistoryPage() {
                             {stat.trips} chuyến • {stat.distance} km
                           </span>
                         </div>
-                        <div className="h-2 bg-surface rounded-full overflow-hidden">
+                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-gradient-to-r from-blue-500 to-green-500"
+                            className="h-full bg-blue-600"
                             style={{ width: `${(stat.distance / 500) * 100}%` }}
                           />
                         </div>
@@ -422,25 +421,25 @@ export default function HistoryPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-lg">
-                <CardHeader>
+              <Card className="shadow-md">
+                <CardHeader className="bg-green-50 border-b">
                   <CardTitle>Thói quen thuê xe</CardTitle>
                   <CardDescription>Phân tích hành vi của bạn</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="p-4 bg-blue-50 rounded-xl">
+                <CardContent className="pt-6 space-y-4">
+                  <div className="p-4 bg-blue-50 rounded-lg">
                     <div className="text-sm text-muted-foreground mb-1">Giờ thuê thường xuyên</div>
                     <div className="font-bold text-blue-600">{analytics.peakHours}</div>
                   </div>
-                  <div className="p-4 bg-green-50 rounded-xl">
+                  <div className="p-4 bg-green-50 rounded-lg">
                     <div className="text-sm text-muted-foreground mb-1">Điểm thuê yêu thích</div>
                     <div className="font-bold text-green-600">{analytics.favoriteStation}</div>
                   </div>
-                  <div className="p-4 bg-blue-50 rounded-xl">
+                  <div className="p-4 bg-blue-50 rounded-lg">
                     <div className="text-sm text-muted-foreground mb-1">Xe yêu thích</div>
                     <div className="font-bold text-blue-600">{analytics.favoriteVehicle}</div>
                   </div>
-                  <div className="p-4 bg-green-50 rounded-xl">
+                  <div className="p-4 bg-green-50 rounded-lg">
                     <div className="text-sm text-muted-foreground mb-1">Quãng đường trung bình</div>
                     <div className="font-bold text-green-600">{analytics.avgTripDistance} km/chuyến</div>
                   </div>

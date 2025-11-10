@@ -7,25 +7,35 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { 
-  Zap, 
   ArrowLeft, 
-  Car, 
-  MapPin, 
-  Calendar, 
-  Clock, 
-  DollarSign, 
-  User, 
+  CheckCircle2,
+  Circle,
+  FileText,
+  CreditCard,
+  Key,
+  AlertTriangle,
+  LogOut,
+  DollarSign,
   Loader2,
-  XCircle,
-  CheckCircle,
-  Star
+  Zap
 } from "lucide-react"
 import Link from "next/link"
 import { rentalOrderService, type RentalOrderResponse } from "@/services/rentalOrderService"
 import { paymentService } from "@/services/paymentService"
-import { feedbackService } from "@/services/feedbackService"
+import { rentalContractService } from "@/services/rentalContractService"
+import { penaltyService } from "@/services/penaltyService"
 import { useToast } from "@/hooks/use-toast"
-import { Textarea } from "@/components/ui/textarea"
+
+// ✅ RENTAL FLOW STEPS
+const FLOW_STEPS = [
+  { id: 1, label: "Đặt xe", status: "Pending", icon: Circle },
+  { id: 2, label: "Ký hợp đồng", status: "Pending", icon: FileText },
+  { id: 3, label: "Đặt cọc", status: "Confirmed", icon: CreditCard },
+  { id: 4, label: "Nhận xe", status: "Active", icon: Key },
+  { id: 5, label: "Thuê xe", status: "Active", icon: AlertTriangle },
+  { id: 6, label: "Trả xe", status: "Completed", icon: LogOut },
+  { id: 7, label: "Thanh toán", status: "Closed", icon: DollarSign }
+]
 
 export default function RentalDetailPage() {
   const params = useParams()
@@ -34,457 +44,499 @@ export default function RentalDetailPage() {
   const rentalId = params.id as string
 
   const [rental, setRental] = useState<RentalOrderResponse | null>(null)
-  const [payment, setPayment] = useState<any>(null)
-  const [feedback, setFeedback] = useState<any>(null)
+  const [contract, setContract] = useState<any>(null)
+  const [payments, setPayments] = useState<any[]>([])
+  const [penalties, setPenalties] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [isCancelling, setIsCancelling] = useState(false)
-  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false)
-  
-  const [feedbackForm, setFeedbackForm] = useState({
-    rating: 5,
-    comment: "",
-  })
 
   useEffect(() => {
-    loadRentalDetails()
+    loadAllData()
   }, [rentalId])
 
-  const loadRentalDetails = async () => {
+  const loadAllData = async () => {
     setIsLoading(true)
     try {
-      // Load rental
+      // Load rental order
       const rentalResponse = await rentalOrderService.getRentalOrderById(rentalId)
       if (rentalResponse.success && rentalResponse.data) {
         setRental(rentalResponse.data)
       }
 
-      // Load payment
+      // Load contract
       try {
-        const paymentResponse = await paymentService.getPaymentsByRentalId(rentalId, { page: 1, pageSize: 1 })
-        if (paymentResponse.success && paymentResponse.data && paymentResponse.data.data.length > 0) {
-          setPayment(paymentResponse.data.data[0])
+        const contractResponse = await rentalContractService.getContractByRentalId(rentalId)
+        if (contractResponse.success && contractResponse.data) {
+          setContract(contractResponse.data)
         }
       } catch (error) {
-        console.log("No payment found")
+        console.log("Contract not found yet")
       }
 
-      // Load feedback (if completed)
-      if (rentalResponse.data?.status === "Completed") {
-        try {
-          const feedbackResponse = await feedbackService.getFeedbacksByRentalId(rentalId, { page: 1, pageSize: 1 })
-          if (feedbackResponse.success && feedbackResponse.data && feedbackResponse.data.data.length > 0) {
-            setFeedback(feedbackResponse.data.data[0])
-          }
-        } catch (error) {
-          console.log("No feedback found")
+      // Load all payments
+      try {
+        const paymentResponse = await paymentService.getPaymentsByRentalId(rentalId, { page: 1, pageSize: 10 })
+        if (paymentResponse.success && paymentResponse.data) {
+          setPayments(paymentResponse.data.data || [])
         }
+      } catch (error) {
+        console.log("No payments found")
+      }
+
+      // Load penalties
+      try {
+        const penaltyResponse = await penaltyService.getPenaltiesByRentalId(rentalId, { page: 1, pageSize: 10 })
+        if (penaltyResponse.success && penaltyResponse.data) {
+          setPenalties(penaltyResponse.data.data || [])
+        }
+      } catch (error) {
+        console.log("No penalties found")
       }
 
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Lỗi",
-        description: error instanceof Error ? error.message : "Không thể tải thông tin đơn thuê",
+        description: "Không thể tải thông tin đơn thuê"
       })
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleCancel = async () => {
-    if (!confirm("Bạn có chắc muốn hủy đơn thuê này?")) return
-
-    setIsCancelling(true)
-    try {
-      await rentalOrderService.cancelRentalOrder(rentalId)
-      toast({
-        title: "Thành công!",
-        description: "Đã hủy đơn thuê",
-      })
-      loadRentalDetails()
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Lỗi",
-        description: error instanceof Error ? error.message : "Không thể hủy đơn thuê",
-      })
-    } finally {
-      setIsCancelling(false)
+  // ✅ GET CURRENT STEP BASED ON STATUS
+  const getCurrentStep = () => {
+    if (!rental) return 1
+    
+    switch (rental.status) {
+      case "Pending":
+        if (contract) {
+          if (contract.signedByRenter === 0 || contract.signedByStaff === 0) {
+            return 2 
+          }
+          const hasDeposit = payments.some(p => p.transactionRef?.includes("DEPOSIT") && p.status === "Paid")
+          return hasDeposit ? 4 : 3
+        }
+        return 1
+      case "Confirmed":
+        return 4 
+      case "Active":
+        return 5 
+      case "Completed":
+        return 6 
+      case "Closed":
+        return 7 
+      default:
+        return 1
     }
   }
 
-  const handleSubmitFeedback = async () => {
-    if (!feedbackForm.comment.trim()) {
-      toast({
-        variant: "destructive",
-        title: "Lỗi",
-        description: "Vui lòng nhập nhận xét",
-      })
-      return
-    }
+  const currentStep = getCurrentStep()
 
-    if (!rental) return
+  const depositPayment = payments.find(p => p.transactionRef?.includes("DEPOSIT") && p.status === "Paid")
+  const finalPayment = payments.find(p => p.transactionRef?.includes("FINAL_PAYMENT") || p.transactionRef?.includes("REFUND"))
+  const totalPenalties = penalties.reduce((sum, p) => sum + p.penaltyAmount, 0)
 
-    const getUserId = () => {
-      const userStr = localStorage.getItem('user')
-      if (userStr) {
-        const user = JSON.parse(userStr)
-        return user.userId || user.id
-      }
-      return null
-    }
-
-    const userId = getUserId()
-    if (!userId) {
-      toast({
-        variant: "destructive",
-        title: "Lỗi",
-        description: "Vui lòng đăng nhập lại",
-      })
-      return
-    }
-
-    setIsSubmittingFeedback(true)
-    try {
-      await feedbackService.createFeedback({
-        rentalId: rentalId,
-        renterId: userId,
-        rating: feedbackForm.rating,
-        comment: feedbackForm.comment,
-      })
-      
-      toast({
-        title: "Cảm ơn đánh giá của bạn!",
-        description: "Đánh giá đã được gửi thành công",
-      })
-      loadRentalDetails()
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Lỗi",
-        description: error instanceof Error ? error.message : "Không thể gửi đánh giá",
-      })
-    } finally {
-      setIsSubmittingFeedback(false)
-    }
+  const handleSignContract = () => {
+    router.push(`/dashboard/rental/${rentalId}/sign-contract`)
   }
 
-  const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, { label: string; className: string }> = {
-      Pending: { label: "Chờ xử lý", className: "bg-yellow-500 text-white" },
-      Active: { label: "Đang thuê", className: "bg-green-500 text-white" },
-      Completed: { label: "Hoàn thành", className: "bg-blue-500 text-white" },
-      Cancelled: { label: "Đã hủy", className: "bg-red-500 text-white" },
-    }
-    return statusMap[status] || { label: status, className: "bg-gray-500 text-white" }
+  const handlePayDeposit = () => {
+    router.push(`/dashboard/rental/${rentalId}/pay-deposit`)
   }
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
-    return date.toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
+  const handleCheckin = () => {
+    router.push(`/dashboard/rental/checkin?rentalId=${rentalId}`)
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(amount)
+  const handleCheckout = () => {
+    router.push(`/dashboard/rental/checkout?rentalId=${rentalId}`)
+  }
+
+  const handleFinalPayment = () => {
+    router.push(`/dashboard/rental/${rentalId}/final-payment`)
   }
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-surface flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
       </div>
     )
   }
 
   if (!rental) {
     return (
-      <div className="min-h-screen bg-surface flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardContent className="p-12 text-center">
-            <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold mb-2">Không tìm thấy đơn thuê</h2>
-            <Link href="/dashboard/history">
-              <Button className="mt-4">Quay lại lịch sử</Button>
-            </Link>
-          </CardContent>
-        </Card>
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <p className="text-gray-500 mb-4">Không tìm thấy đơn thuê xe</p>
+        <Button onClick={() => router.push("/dashboard/history")}>Quay lại</Button>
       </div>
     )
   }
 
-  const statusInfo = getStatusBadge(rental.status)
-
   return (
-    <div className="min-h-screen bg-surface">
+    <div className="min-h-screen bg-gray-50">
       {/* Navigation */}
-      <nav className="bg-white border-b border-border sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center">
+      <nav className="bg-white border-b sticky top-0 z-50 shadow-sm">
+        <div className="max-w-[1800px] mx-auto px-8 py-4 flex items-center justify-between">
+          <Link href="/dashboard" className="flex items-center gap-3">
+            <div className="w-11 h-11 bg-blue-600 rounded-xl flex items-center justify-center shadow-md">
               <Zap className="w-6 h-6 text-white" />
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-              EV Station
-            </span>
+            <div>
+              <span className="text-xl font-bold text-gray-900">EV Station</span>
+              <p className="text-xs text-gray-500">Rental System</p>
+            </div>
           </Link>
-          <Link href="/dashboard/history">
-            <Button variant="ghost">
-              <ArrowLeft className="mr-2 w-4 h-4" />
-              Quay lại
-            </Button>
-          </Link>
+          
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard/history">
+              <Button variant="outline" className="gap-2">
+                <ArrowLeft className="w-4 h-4" />
+                Quay lại
+              </Button>
+            </Link>
+          </div>
         </div>
       </nav>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="max-w-[1800px] mx-auto px-8 py-8">
         {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-3xl font-bold">Chi tiết đơn thuê</h1>
-            <Badge className={statusInfo.className}>{statusInfo.label}</Badge>
+        <div className="mb-8 bg-blue-600 rounded-xl p-8 shadow-lg">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center">
+              <FileText className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold text-white mb-1">Chi tiết đơn thuê xe</h1>
+              <p className="text-blue-100 text-lg">Mã đơn: {rentalId}</p>
+            </div>
           </div>
-          <p className="text-muted-foreground">Mã đơn: {rental.rentalId}</p>
         </div>
+        {/* Stepper */}
+        <Card className="mb-6 shadow-md">
+          <CardHeader className="bg-gray-50 border-b">
+            <CardTitle>Tiến trình thuê xe</CardTitle>
+            <CardDescription>Theo dõi các bước của đơn thuê xe</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="relative">
+              {/* Progress Line */}
+              <div className="absolute top-5 left-0 w-full h-1 bg-gray-200">
+                <div 
+                  className="h-full bg-blue-600 transition-all duration-500"
+                  style={{ width: `${((currentStep - 1) / (FLOW_STEPS.length - 1)) * 100}%` }}
+                />
+              </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Main Info */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Rental Info Card */}
-            <Card className="border-0 shadow-lg">
-              <CardHeader>
-                <CardTitle>Thông tin thuê xe</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="flex items-start gap-3">
-                    <Car className="w-5 h-5 text-blue-600 mt-0.5" />
-                    <div>
-                      <div className="text-sm text-muted-foreground">Xe</div>
-                      <div className="font-medium">ID: {rental.vehicleId}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <MapPin className="w-5 h-5 text-green-600 mt-0.5" />
-                    <div>
-                      <div className="text-sm text-muted-foreground">Điểm nhận</div>
-                      <div className="font-medium">Branch: {rental.branchStartId}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <MapPin className="w-5 h-5 text-red-600 mt-0.5" />
-                    <div>
-                      <div className="text-sm text-muted-foreground">Điểm trả</div>
-                      <div className="font-medium">Branch: {rental.branchEndId}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <User className="w-5 h-5 text-blue-600 mt-0.5" />
-                    <div>
-                      <div className="text-sm text-muted-foreground">Nhân viên xử lý</div>
-                      <div className="font-medium">{rental.staffId || "Chưa có"}</div>
-                    </div>
-                  </div>
-                </div>
+              {/* Steps */}
+              <div className="relative grid grid-cols-7 gap-2">
+                {FLOW_STEPS.map((step, index) => {
+                  const isCompleted = index + 1 < currentStep
+                  const isCurrent = index + 1 === currentStep
+                  const Icon = step.icon
 
-                <Separator />
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="flex items-start gap-3">
-                    <Calendar className="w-5 h-5 text-blue-600 mt-0.5" />
-                    <div>
-                      <div className="text-sm text-muted-foreground">Thời gian nhận</div>
-                      <div className="font-medium">{formatDate(rental.startTime)}</div>
-                    </div>
-                  </div>
-                  {rental.endTime && (
-                    <div className="flex items-start gap-3">
-                      <Clock className="w-5 h-5 text-green-600 mt-0.5" />
-                      <div>
-                        <div className="text-sm text-muted-foreground">Thời gian trả</div>
-                        <div className="font-medium">{formatDate(rental.endTime)}</div>
+                  return (
+                    <div key={step.id} className="flex flex-col items-center">
+                      <div 
+                        className={`
+                          w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all z-10
+                          ${isCompleted ? 'bg-blue-600 border-blue-600' : 
+                            isCurrent ? 'bg-white border-blue-600' : 
+                            'bg-white border-gray-300'}
+                        `}
+                      >
+                        {isCompleted ? (
+                          <CheckCircle2 className="w-5 h-5 text-white" />
+                        ) : (
+                          <Icon className={`w-5 h-5 ${isCurrent ? 'text-blue-600' : 'text-gray-400'}`} />
+                        )}
                       </div>
-                    </div>
-                  )}
-                </div>
-
-                <Separator />
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="flex items-start gap-3">
-                    <DollarSign className="w-5 h-5 text-blue-600 mt-0.5" />
-                    <div>
-                      <div className="text-sm text-muted-foreground">Chi phí dự kiến</div>
-                      <div className="font-medium text-lg">{formatCurrency(rental.estimatedCost)}</div>
-                    </div>
-                  </div>
-                  {rental.actualCost && (
-                    <div className="flex items-start gap-3">
-                      <DollarSign className="w-5 h-5 text-green-600 mt-0.5" />
-                      <div>
-                        <div className="text-sm text-muted-foreground">Chi phí thực tế</div>
-                        <div className="font-medium text-lg">{formatCurrency(rental.actualCost)}</div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Payment Info */}
-            {payment && (
-              <Card className="border-0 shadow-lg">
-                <CardHeader>
-                  <CardTitle>Thông tin thanh toán</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Mã thanh toán:</span>
-                    <span className="font-medium">{payment.paymentId}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Số tiền:</span>
-                    <span className="font-bold text-lg">{formatCurrency(payment.amount)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Phương thức:</span>
-                    <span className="font-medium">{payment.paymentMethod}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Trạng thái:</span>
-                    <Badge className={payment.paymentStatus === "Completed" ? "bg-green-500 text-white" : "bg-yellow-500 text-white"}>
-                      {payment.paymentStatus}
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Feedback Section */}
-            {rental.status === "Completed" && (
-              <Card className="border-0 shadow-lg">
-                <CardHeader>
-                  <CardTitle>Đánh giá</CardTitle>
-                  <CardDescription>Chia sẻ trải nghiệm của bạn</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {feedback ? (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star 
-                            key={star}
-                            className={`w-5 h-5 ${star <= feedback.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-                          />
-                        ))}
-                      </div>
-                      <p className="text-muted-foreground">{feedback.comment}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Đánh giá lúc: {formatDate(feedback.createdAt)}
+                      <p className={`mt-2 text-xs text-center font-medium ${isCurrent ? 'text-blue-600' : 'text-gray-500'}`}>
+                        {step.label}
                       </p>
                     </div>
+                  )
+                })}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left: Rental Info */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Rental Order Info */}
+          <Card className="shadow-md">
+            <CardHeader className="bg-blue-50 border-b">
+              <div className="flex items-center justify-between">
+                <CardTitle>Thông tin đơn thuê</CardTitle>
+                <Badge className={`${
+                  rental.status === "Active" ? "bg-green-600" :
+                  rental.status === "Completed" ? "bg-blue-600" :
+                  rental.status === "Cancelled" ? "bg-red-600" :
+                  "bg-yellow-600"
+                }`}>
+                  {rental.status}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-3 bg-blue-50 rounded-lg">
+                  <p className="text-xs text-gray-500 mb-1">Bắt đầu</p>
+                  <p className="font-medium">{new Date(rental.startTime).toLocaleString("vi-VN")}</p>
+                </div>
+                <div className="p-3 bg-green-50 rounded-lg">
+                  <p className="text-xs text-gray-500 mb-1">Kết thúc</p>
+                  <p className="font-medium">{rental.endTime ? new Date(rental.endTime).toLocaleString("vi-VN") : "Chưa xác định"}</p>
+                </div>
+              </div>
+              <Separator />
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <p className="text-sm text-gray-500 mb-2">Chi phí dự kiến</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {rental.estimatedCost.toLocaleString("vi-VN")} đ
+                </p>
+              </div>
+              {rental.actualCost && (
+                <div className="p-4 bg-green-50 rounded-lg">
+                  <p className="text-sm text-gray-500 mb-2">Chi phí thực tế</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {rental.actualCost.toLocaleString("vi-VN")} đ
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Contract Info */}
+          {contract && (
+            <Card className="shadow-md">
+              <CardHeader className="bg-green-50 border-b">
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-green-600" />
+                  Hợp đồng điện tử
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-4">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="text-sm font-medium text-gray-700">Loại hợp đồng</span>
+                  <Badge variant="outline">{contract.contractType}</Badge>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="text-sm font-medium text-gray-700">Staff đã ký</span>
+                  {contract.signedByStaff === 1 ? (
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
                   ) : (
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Đánh giá sao</label>
-                        <div className="flex items-center gap-2">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star 
-                              key={star}
-                              className={`w-6 h-6 cursor-pointer ${star <= feedbackForm.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-                              onClick={() => setFeedbackForm({...feedbackForm, rating: star})}
-                            />
-                          ))}
-                        </div>
+                    <Circle className="w-5 h-5 text-gray-300" />
+                  )}
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="text-sm font-medium text-gray-700">Renter đã ký</span>
+                  {contract.signedByRenter === 1 ? (
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                  ) : (
+                    <Circle className="w-5 h-5 text-gray-300" />
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Payments */}
+          {payments.length > 0 && (
+            <Card className="shadow-md">
+              <CardHeader className="bg-purple-50 border-b">
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="w-5 h-5 text-purple-600" />
+                  Thanh toán
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="space-y-3">
+                  {depositPayment && (
+                    <div className="flex justify-between items-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <div>
+                        <p className="font-medium text-gray-900">Tiền đặt cọc</p>
+                        <p className="text-xs text-gray-500 mt-1">{new Date(depositPayment.paymentTime).toLocaleString("vi-VN")}</p>
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Nhận xét</label>
-                        <Textarea 
-                          placeholder="Chia sẻ trải nghiệm của bạn..."
-                          value={feedbackForm.comment}
-                          onChange={(e) => setFeedbackForm({...feedbackForm, comment: e.target.value})}
-                        />
+                      <div className="text-right">
+                        <p className="font-bold text-blue-600">{depositPayment.amount.toLocaleString("vi-VN")} đ</p>
+                        <Badge variant="outline" className="text-xs mt-1">{depositPayment.paymentMethod}</Badge>
                       </div>
-                      <Button 
-                        onClick={handleSubmitFeedback}
-                        disabled={isSubmittingFeedback}
-                        className="w-full bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white"
-                      >
-                        {isSubmittingFeedback ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Đang gửi...
-                          </>
-                        ) : (
-                          "Gửi đánh giá"
-                        )}
-                      </Button>
                     </div>
                   )}
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                  
+                  {finalPayment && (
+                    <div className="flex justify-between items-center p-4 bg-green-50 rounded-lg border border-green-200">
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {finalPayment.transactionRef?.includes("REFUND") ? "Hoàn tiền" : "Thanh toán cuối"}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">{new Date(finalPayment.paymentTime).toLocaleString("vi-VN")}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-green-600">{finalPayment.amount.toLocaleString("vi-VN")} đ</p>
+                        <Badge 
+                          variant="outline" 
+                          className={`text-xs mt-1 ${finalPayment.status === "Paid" ? "bg-green-100" : "bg-yellow-100"}`}
+                        >
+                          {finalPayment.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-          {/* Actions Sidebar */}
-          <div className="space-y-4">
-            <Card className="border-0 shadow-lg">
-              <CardHeader>
-                <CardTitle>Hành động</CardTitle>
+          {/* Penalties */}
+          {penalties.length > 0 && (
+            <Card className="shadow-md border-l-4 border-l-red-600">
+              <CardHeader className="bg-red-50 border-b">
+                <CardTitle className="flex items-center gap-2 text-red-600">
+                  <AlertTriangle className="w-5 h-5" />
+                  Phí phạt
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {rental.status === "Pending" && (
-                  <Button 
-                    variant="destructive" 
-                    className="w-full"
-                    onClick={handleCancel}
-                    disabled={isCancelling}
-                  >
-                    {isCancelling ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Đang hủy...
-                      </>
-                    ) : (
-                      <>
-                        <XCircle className="mr-2 h-4 w-4" />
-                        Hủy đơn
-                      </>
-                    )}
-                  </Button>
-                )}
-                
-                <Button variant="outline" className="w-full" onClick={() => window.print()}>
-                  In hóa đơn
-                </Button>
-                
-                <Link href="/dashboard/history">
-                  <Button variant="ghost" className="w-full">
-                    Xem lịch sử
-                  </Button>
-                </Link>
+              <CardContent className="pt-6">
+                <div className="space-y-3">
+                  {penalties.map((penalty) => (
+                    <div key={penalty.penaltyId} className="flex justify-between items-start p-4 bg-red-50 rounded-lg border border-red-200">
+                      <div className="flex-1">
+                        <p className="font-medium text-red-900">{penalty.reason}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {new Date(penalty.issuedDate).toLocaleString("vi-VN")}
+                        </p>
+                      </div>
+                      <p className="font-bold text-red-600 ml-4">
+                        +{penalty.penaltyAmount.toLocaleString("vi-VN")} đ
+                      </p>
+                    </div>
+                  ))}
+                  <Separator />
+                  <div className="flex justify-between items-center font-bold p-3 bg-red-100 rounded-lg">
+                    <span className="text-gray-900">Tổng phí phạt</span>
+                    <span className="text-red-600 text-xl">
+                      {totalPenalties.toLocaleString("vi-VN")} đ
+                    </span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
-
-            <Card className="border-0 shadow-lg bg-blue-50">
-              <CardContent className="p-6">
-                <h3 className="font-bold mb-2">Cần hỗ trợ?</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Liên hệ với chúng tôi nếu bạn có bất kỳ thắc mắc nào
-                </p>
-                <Button className="w-full">Liên hệ hỗ trợ</Button>
-              </CardContent>
-            </Card>
-          </div>
+          )}
         </div>
+
+        {/* Right: Actions */}
+        <div className="space-y-6">
+          <Card className="shadow-md bg-blue-600 text-white border-0">
+            <CardHeader>
+              <CardTitle className="text-white">Hành động</CardTitle>
+              <CardDescription className="text-blue-100">
+                Bước tiếp theo của bạn
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {/* Step 2: Sign Contract */}
+              {rental.status === "Pending" && contract && contract.signedByRenter === 0 && (
+                <Button 
+                  onClick={handleSignContract}
+                  className="w-full bg-white text-blue-600 hover:bg-blue-50"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Ký hợp đồng điện tử
+                </Button>
+              )}
+
+              {/* Step 3: Pay Deposit */}
+              {rental.status === "Pending" && contract && contract.signedByRenter === 1 && !depositPayment && (
+                <Button 
+                  onClick={handlePayDeposit}
+                  className="w-full bg-white text-blue-600 hover:bg-blue-50"
+                >
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Thanh toán đặt cọc
+                </Button>
+              )}
+
+              {/* Step 4: Check-in */}
+              {rental.status === "Confirmed" && (
+                <Button 
+                  onClick={handleCheckin}
+                  className="w-full bg-white text-blue-600 hover:bg-blue-50"
+                >
+                  <Key className="w-4 h-4 mr-2" />
+                  Nhận xe (Check-in)
+                </Button>
+              )}
+
+              {/* Step 6: Check-out */}
+              {rental.status === "Active" && (
+                <Button 
+                  onClick={handleCheckout}
+                  className="w-full bg-white text-blue-600 hover:bg-blue-50"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Trả xe (Check-out)
+                </Button>
+              )}
+
+              {/* Step 7: Final Payment */}
+              {rental.status === "Completed" && finalPayment && finalPayment.status === "Pending" && (
+                <Button 
+                  onClick={handleFinalPayment}
+                  className="w-full bg-white text-blue-600 hover:bg-blue-50"
+                >
+                  <DollarSign className="w-4 h-4 mr-2" />
+                  Thanh toán cuối cùng
+                </Button>
+              )}
+
+              {rental.status === "Closed" && (
+                <div className="text-center py-4">
+                  <CheckCircle2 className="w-12 h-12 mx-auto mb-2 text-white" />
+                  <p className="font-medium">Đã hoàn thành!</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Breakdown Card */}
+          {rental.status === "Completed" && (
+            <Card className="shadow-md">
+              <CardHeader className="bg-orange-50 border-b">
+                <CardTitle>Chi tiết chi phí</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-3">
+                <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="text-gray-700">Chi phí dự kiến</span>
+                  <span className="font-medium">{rental.estimatedCost.toLocaleString("vi-VN")} đ</span>
+                </div>
+                {totalPenalties > 0 && (
+                  <div className="flex justify-between p-3 bg-red-50 rounded-lg text-red-600">
+                    <span>Phí phạt</span>
+                    <span className="font-medium">+{totalPenalties.toLocaleString("vi-VN")} đ</span>
+                  </div>
+                )}
+                {depositPayment && (
+                  <div className="flex justify-between p-3 bg-blue-50 rounded-lg text-blue-600">
+                    <span>Đã đặt cọc</span>
+                    <span className="font-medium">-{depositPayment.amount.toLocaleString("vi-VN")} đ</span>
+                  </div>
+                )}
+                <Separator />
+                <div className="flex justify-between p-3 bg-green-50 rounded-lg">
+                  <span className="font-bold text-gray-900">Cần thanh toán</span>
+                  <span className="text-lg font-bold text-green-600">
+                    {(rental.actualCost || rental.estimatedCost + totalPenalties - (depositPayment?.amount || 0)).toLocaleString("vi-VN")} đ
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
       </div>
     </div>
   )

@@ -151,7 +151,7 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-green-50">
       {/* Navigation */}
       <nav className="bg-white/80 backdrop-blur-lg border-b border-border/50 sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="w-full p-6 py-4 flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-2">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center shadow-md">
               <Zap className="w-6 h-6 text-white" />
@@ -187,7 +187,7 @@ export default function ProfilePage() {
         </div>
       </nav>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="w-full p-6 py-8">
         {/* Header */}
         <Card className="mb-8 border-0 shadow-xl bg-gradient-to-br from-blue-50 to-green-50 overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-green-500"></div>
