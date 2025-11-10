@@ -1,12 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Zap,
   Car,
@@ -20,11 +23,30 @@ import {
   FileText,
   User,
   Phone,
+  Loader2,
+  Gauge,
+  Shield,
+  ArrowLeft,
 } from "lucide-react"
 import Link from "next/link"
-import { motion } from "framer-motion"
+import { checkinService } from "@/services/checkinService"
+import { rentalOrderService } from "@/services/rentalOrderService"
+import { vehicleService } from "@/services/vehicleService"
+import { branchService } from "@/services/branchService"
+import { useToast } from "@/hooks/use-toast"
 
 export default function CheckInPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const { toast } = useToast()
+  
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [rentalOrder, setRentalOrder] = useState<any>(null)
+  const [vehicle, setVehicle] = useState<any>(null)
+  const [vehicleType, setVehicleType] = useState<any>(null)
+  const [branch, setBranch] = useState<any>(null)
+  
   const [inspectionChecklist, setInspectionChecklist] = useState({
     exterior: false,
     interior: false,
@@ -34,356 +56,518 @@ export default function CheckInPage() {
   })
   const [notes, setNotes] = useState("")
   const [agreed, setAgreed] = useState(false)
+  
+  const [odometerReading, setOdometerReading] = useState("")
+  const [batteryLevel, setBatteryLevel] = useState("")
+  const [photoUrls, setPhotoUrls] = useState<string[]>(["", "", "", "", ""])
 
-  const rentalDetails = {
-    id: "RNT-001",
-    vehicle: "VinFast VF e34",
-    plateNumber: "51A-12345",
-    station: "Điểm thuê Quận 1",
-    address: "123 Nguyễn Huệ, Q1, TP.HCM",
-    startDate: "25/01/2025",
-    startTime: "9:00 AM",
-    endTime: "6:00 PM",
-    battery: 95,
-    mileage: 12450,
-    price: 350000,
+  const rentalId = searchParams.get("rentalId")
+
+  useEffect(() => {
+    if (rentalId) {
+      loadAllData()
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Không tìm thấy thông tin đơn thuê",
+      })
+      router.push("/dashboard")
+    }
+  }, [rentalId])
+
+  const loadAllData = async () => {
+    if (!rentalId) return
+    
+    setIsLoading(true)
+    try {
+      const response = await rentalOrderService.getRentalOrderById(rentalId)
+      if (response.success && response.data) {
+        setRentalOrder(response.data)
+        
+        // Load vehicle details
+        try {
+          const vehicleRes = await vehicleService.getVehicleById(response.data.vehicleId)
+          if (vehicleRes.success && vehicleRes.data) {
+            setVehicle(vehicleRes.data)
+            
+            // Load vehicle type
+            const typeRes = await vehicleService.getVehicleTypeById(vehicleRes.data.typeId)
+            if (typeRes.success && typeRes.data) {
+              setVehicleType(typeRes.data)
+            }
+          }
+        } catch (err) {
+          console.error("Load vehicle error:", err)
+        }
+        
+        // Load branch details
+        try {
+          const branchRes = await branchService.getBranchById(response.data.branchStartId)
+          if (branchRes.success && branchRes.data) {
+            setBranch(branchRes.data)
+          }
+        } catch (err) {
+          console.error("Load branch error:", err)
+        }
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: error instanceof Error ? error.message : "Không thể tải thông tin đơn thuê",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const staffInfo = {
-    name: "Trần Văn B",
-    phone: "0901234567",
+  const handleCheckin = async () => {
+    if (!rentalOrder) return
+
+    if (!odometerReading || !batteryLevel) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Vui lòng nhập đầy đủ số km và mức pin",
+      })
+      return
+    }
+
+    if (!allChecked) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Vui lòng hoàn thành tất cả kiểm tra",
+      })
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const userStr = localStorage.getItem('user')
+      const user = userStr ? JSON.parse(userStr) : null
+      const staffId = user?.userId || "00000000-0000-0000-0000-000000000000"
+
+      // Lấy RentalOrderDetailId từ RentalOrder
+      const detailsResponse = await rentalOrderService.getRentalOrderDetails(rentalOrder.rentalId)
+      
+      if (!detailsResponse.success || !detailsResponse.data || detailsResponse.data.length === 0) {
+        throw new Error("Không tìm thấy thông tin chi tiết đơn thuê")
+      }
+
+      // Lấy RentalOrderDetailId đầu tiên (backend trả về field "id")
+      const rentalOrderDetailId = detailsResponse.data[0].id
+
+      const checkinData = {
+        rentalOrderDetailId: rentalOrderDetailId,  // ✅ ĐÚNG: Sử dụng RentalOrderDetailId
+        staffId: staffId,
+        odometerReading: parseInt(odometerReading),
+        batteryLevel: parseInt(batteryLevel),
+        status: "Completed",
+        photos: photoUrls.filter(url => url.trim()).map(url => ({
+          photoUrl: url,
+          description: notes || "Check-in photo"
+        }))
+      }
+
+      const response = await checkinService.createCheckin(checkinData)
+      
+      if (response.success) {
+        toast({
+          title: "Thành công!",
+          description: "Đã check-in nhận xe thành công",
+        })
+        router.push(`/dashboard/rental/${rentalId}`)
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: error instanceof Error ? error.message : "Không thể check-in",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const allChecked = Object.values(inspectionChecklist).every((v) => v) && agreed
+  const allChecked = Object.values(inspectionChecklist).every((v) => v) && agreed && odometerReading && batteryLevel
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    )
+  }
+
+  if (!rentalOrder) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="p-8">
+          <p className="text-center text-muted-foreground">Không tìm thấy thông tin đơn thuê</p>
+        </Card>
+      </div>
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-green-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Navigation */}
-      <nav className="bg-white/95 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-green-500 rounded-xl flex items-center justify-center shadow-lg">
+      <nav className="bg-white border-b sticky top-0 z-50 shadow-sm">
+        <div className="max-w-[1800px] mx-auto px-8 py-4 flex items-center justify-between">
+          <Link href="/dashboard" className="flex items-center gap-3">
+            <div className="w-11 h-11 bg-blue-600 rounded-xl flex items-center justify-center shadow-md">
               <Zap className="w-6 h-6 text-white" />
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-              EV Station
-            </span>
+            <div>
+              <span className="text-xl font-bold text-gray-900">EV Station</span>
+              <p className="text-xs text-gray-500">Rental System</p>
+            </div>
           </Link>
-          <Link href="/dashboard">
-            <Button variant="ghost">Quay lại Dashboard</Button>
-          </Link>
+          
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard">
+              <Button variant="outline" className="gap-2">
+                <ArrowLeft className="w-4 h-4" />
+                Dashboard
+              </Button>
+            </Link>
+          </div>
         </div>
       </nav>
 
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="max-w-[1800px] mx-auto px-8 py-8">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8"
-        >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur-sm border border-blue-200 shadow-sm mb-4">
-            <CheckCircle className="w-4 h-4 text-green-600" />
-            <span className="text-sm font-medium text-gray-700">Bước 1: Check-in nhận xe</span>
+        <div className="mb-8 bg-blue-600 rounded-xl p-8 shadow-lg">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center">
+              <CheckCircle className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold text-white mb-1">Check-in nhận xe</h1>
+              <p className="text-blue-100 text-lg">Xác nhận tình trạng xe trước khi khởi hành</p>
+            </div>
           </div>
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-            Nhận xe điện
-          </h1>
-          <p className="text-gray-600 text-lg">Xác nhận tình trạng xe trước khi khởi hành</p>
-        </motion.div>
+        </div>
 
-        {/* Rental Info */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.5 }}
-        >
-          <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-md mb-6">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-2xl">Thông tin chuyến thuê</CardTitle>
-                  <CardDescription>Mã: {rentalDetails.id}</CardDescription>
-                </div>
-                <Badge className="bg-gradient-to-r from-blue-500 to-green-500 text-white border-0">
-                  Đang chờ nhận
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl">
-                    <Car className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                      <div className="text-sm text-gray-600 mb-1">Xe</div>
-                      <div className="font-bold text-gray-900">{rentalDetails.vehicle}</div>
-                      <div className="text-sm text-gray-600">Biển số: {rentalDetails.plateNumber}</div>
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Left Column - Vehicle & Rental Info */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Vehicle Info Card */}
+            <Card className="shadow-md">
+                <CardHeader className="bg-blue-50 border-b">
+                  <CardTitle className="flex items-center gap-2">
+                    <Car className="w-5 h-5 text-blue-600" />
+                    Thông tin xe
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div>
+                        <div className="text-2xl font-bold text-gray-900">
+                          {vehicleType ? `${vehicleType.brand} ${vehicleType.model}` : "Đang tải..."}
+                        </div>
+                        <div className="text-sm text-gray-600">{vehicleType?.typeName || "---"}</div>
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-2">
+                        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200">
+                          {vehicle?.plateNumber || "N/A"}
+                        </Badge>
+                        <Badge variant="outline" className="border-green-300 text-green-700">
+                          {vehicle?.color || "---"}
+                        </Badge>
+                      </div>
+
+                      <div className="pt-2 space-y-3">
+                        <div className="flex items-center gap-3">
+                          <Battery className="w-5 h-5 text-green-600" />
+                          <div>
+                            <div className="text-xs text-gray-600">Dung lượng pin</div>
+                            <div className="font-semibold">{vehicle?.batteryCapacity || 100}%</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Gauge className="w-5 h-5 text-blue-600" />
+                          <div>
+                            <div className="text-xs text-gray-600">Năm sản xuất</div>
+                            <div className="font-semibold">{vehicle?.manufactureYear || "---"}</div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl">
-                    <MapPin className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                      <div className="text-sm text-gray-600 mb-1">Điểm thuê</div>
-                      <div className="font-bold text-gray-900">{rentalDetails.station}</div>
-                      <div className="text-sm text-gray-600">{rentalDetails.address}</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl">
-                    <Calendar className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                      <div className="text-sm text-gray-600 mb-1">Thời gian</div>
-                      <div className="font-bold text-gray-900">{rentalDetails.startDate}</div>
-                      <div className="text-sm text-gray-600">
-                        {rentalDetails.startTime} - {rentalDetails.endTime}
+                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                      <div className="flex items-start gap-3">
+                        <MapPin className="w-5 h-5 text-blue-600 flex-shrink-0 mt-1" />
+                        <div>
+                          <div className="font-semibold text-gray-900">{branch?.branchName || "Đang tải..."}</div>
+                          <div className="text-sm text-gray-600 mt-1">
+                            {branch?.address}, {branch?.city}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-2">
+                            📞 {branch?.contactNumber || "---"}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            ⏰ {branch?.workingHours || "---"}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="p-4 bg-gradient-to-br from-blue-600 to-green-500 rounded-xl text-white">
-                    <div className="text-sm text-blue-100 mb-1">Chi phí</div>
-                    <div className="text-3xl font-bold">{rentalDetails.price.toLocaleString()}đ</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Vehicle Status */}
-              <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
-                <div className="p-4 bg-green-50 rounded-xl">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-gray-600">Mức pin hiện tại</span>
-                    <Battery className="w-5 h-5 text-green-600" />
-                  </div>
-                  <div className="text-3xl font-bold text-green-600 mb-2">{rentalDetails.battery}%</div>
-                  <Progress value={rentalDetails.battery} className="h-2" />
-                </div>
-
-                <div className="p-4 bg-blue-50 rounded-xl">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-gray-600">Số km hiện tại</span>
-                    <Car className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div className="text-3xl font-bold text-blue-600">{rentalDetails.mileage.toLocaleString()}</div>
-                  <div className="text-xs text-gray-600 mt-1">km</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Staff Contact */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-        >
-          <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-md mb-6">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center">
-                  <User className="w-6 h-6 text-white" />
-                </div>
-                <div className="flex-1">
-                  <div className="font-bold text-gray-900">Nhân viên hỗ trợ</div>
-                  <div className="text-sm text-gray-600">{staffInfo.name}</div>
-                </div>
-                <a href={`tel:${staffInfo.phone}`}>
-                  <Button className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white">
-                    <Phone className="mr-2 w-4 h-4" />
-                    Liên hệ
-                  </Button>
-                </a>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Inspection Checklist */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
-        >
-          <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-md mb-6">
-            <CardHeader>
-              <CardTitle>Kiểm tra xe</CardTitle>
-              <CardDescription>Vui lòng xác nhận các mục sau trước khi nhận xe</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                  <Checkbox
-                    id="exterior"
-                    checked={inspectionChecklist.exterior}
-                    onCheckedChange={(checked) =>
-                      setInspectionChecklist({ ...inspectionChecklist, exterior: checked as boolean })
-                    }
-                    className="mt-1"
-                  />
-                  <label htmlFor="exterior" className="flex-1 cursor-pointer">
-                    <div className="font-medium text-gray-900">Ngoại thất xe</div>
-                    <div className="text-sm text-gray-600">
-                      Kiểm tra các vết xước, móp méo, đèn, gương, bánh xe
+                  <div className="mt-6 pt-6 border-t grid grid-cols-2 gap-4">
+                    <div className="flex items-center gap-3">
+                      <Calendar className="w-5 h-5 text-gray-400" />
+                      <div>
+                        <div className="text-xs text-gray-600">Thời gian nhận</div>
+                        <div className="font-medium">{rentalOrder ? new Date(rentalOrder.startTime).toLocaleString('vi-VN') : "---"}</div>
+                      </div>
                     </div>
-                  </label>
-                </div>
-
-                <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                  <Checkbox
-                    id="interior"
-                    checked={inspectionChecklist.interior}
-                    onCheckedChange={(checked) =>
-                      setInspectionChecklist({ ...inspectionChecklist, interior: checked as boolean })
-                    }
-                    className="mt-1"
-                  />
-                  <label htmlFor="interior" className="flex-1 cursor-pointer">
-                    <div className="font-medium text-gray-900">Nội thất xe</div>
-                    <div className="text-sm text-gray-600">
-                      Kiểm tra ghế ngồi, vô lăng, màn hình, điều hòa, các tính năng
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-5 h-5 text-gray-400" />
+                      <div>
+                        <div className="text-xs text-gray-600">Thời gian trả</div>
+                        <div className="font-medium">{rentalOrder?.endTime ? new Date(rentalOrder.endTime).toLocaleString('vi-VN') : "---"}</div>
+                      </div>
                     </div>
-                  </label>
-                </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-                <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                  <Checkbox
-                    id="battery"
-                    checked={inspectionChecklist.battery}
-                    onCheckedChange={(checked) =>
-                      setInspectionChecklist({ ...inspectionChecklist, battery: checked as boolean })
-                    }
-                    className="mt-1"
-                  />
-                  <label htmlFor="battery" className="flex-1 cursor-pointer">
-                    <div className="font-medium text-gray-900">Mức pin và số km</div>
-                    <div className="text-sm text-gray-600">
-                      Xác nhận pin {rentalDetails.battery}% và {rentalDetails.mileage.toLocaleString()} km
+            {/* Vehicle Inspection */}
+            <Card className="shadow-md">
+                <CardHeader className="bg-green-50 border-b">
+                  <CardTitle>Kiểm tra xe</CardTitle>
+                  <CardDescription>Xác nhận tình trạng cùng nhân viên</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Checklist */}
+                  <div className="space-y-3">
+                    <div 
+                      className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                        inspectionChecklist.exterior 
+                          ? 'border-blue-500 bg-blue-50' 
+                          : 'border-gray-200 hover:border-blue-300'
+                      }`}
+                      onClick={() => setInspectionChecklist({ ...inspectionChecklist, exterior: !inspectionChecklist.exterior })}
+                    >
+                      <Checkbox
+                        checked={inspectionChecklist.exterior}
+                        onCheckedChange={(checked) =>
+                          setInspectionChecklist({ ...inspectionChecklist, exterior: checked as boolean })
+                        }
+                        className="mt-1 pointer-events-none"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium">Ngoại thất</div>
+                        <div className="text-sm text-gray-600">Kiểm tra vết xước, móp méo, đèn, gương</div>
+                      </div>
                     </div>
-                  </label>
-                </div>
 
-                <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                  <Checkbox
-                    id="documents"
-                    checked={inspectionChecklist.documents}
-                    onCheckedChange={(checked) =>
-                      setInspectionChecklist({ ...inspectionChecklist, documents: checked as boolean })
-                    }
-                    className="mt-1"
-                  />
-                  <label htmlFor="documents" className="flex-1 cursor-pointer">
-                    <div className="font-medium text-gray-900">Giấy tờ xe</div>
-                    <div className="text-sm text-gray-600">Kiểm tra đăng ký xe, bảo hiểm trong cốp</div>
-                  </label>
-                </div>
+                    <div 
+                      className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                        inspectionChecklist.interior 
+                          ? 'border-blue-500 bg-blue-50' 
+                          : 'border-gray-200 hover:border-blue-300'
+                      }`}
+                      onClick={() => setInspectionChecklist({ ...inspectionChecklist, interior: !inspectionChecklist.interior })}
+                    >
+                      <Checkbox
+                        checked={inspectionChecklist.interior}
+                        onCheckedChange={(checked) =>
+                          setInspectionChecklist({ ...inspectionChecklist, interior: checked as boolean })
+                        }
+                        className="mt-1 pointer-events-none"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium">Nội thất</div>
+                        <div className="text-sm text-gray-600">Kiểm tra ghế ngồi, vô lăng, màn hình</div>
+                      </div>
+                    </div>
 
-                <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                  <Checkbox
-                    id="photos"
-                    checked={inspectionChecklist.photos}
-                    onCheckedChange={(checked) =>
-                      setInspectionChecklist({ ...inspectionChecklist, photos: checked as boolean })
-                    }
-                    className="mt-1"
-                  />
-                  <label htmlFor="photos" className="flex-1 cursor-pointer">
-                    <div className="font-medium text-gray-900">Chụp ảnh xe</div>
-                    <div className="text-sm text-gray-600">Đã chụp 4 góc xe + nội thất cùng nhân viên</div>
-                  </label>
-                </div>
-              </div>
+                    <div 
+                      className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                        inspectionChecklist.battery 
+                          ? 'border-blue-500 bg-blue-50' 
+                          : 'border-gray-200 hover:border-blue-300'
+                      }`}
+                      onClick={() => setInspectionChecklist({ ...inspectionChecklist, battery: !inspectionChecklist.battery })}
+                    >
+                      <Checkbox
+                        checked={inspectionChecklist.battery}
+                        onCheckedChange={(checked) =>
+                          setInspectionChecklist({ ...inspectionChecklist, battery: checked as boolean })
+                        }
+                        className="mt-1 pointer-events-none"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium">Pin & Động cơ</div>
+                        <div className="text-sm text-gray-600">Kiểm tra mức pin, hệ thống sạc</div>
+                      </div>
+                    </div>
 
-              <div className="pt-4 border-t">
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Ghi chú thêm (nếu có)</label>
-                <Textarea
-                  placeholder="Ghi chú các vấn đề hoặc hư hỏng đã được ghi nhận..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={3}
-                  className="resize-none"
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+                    <div 
+                      className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                        inspectionChecklist.documents 
+                          ? 'border-blue-500 bg-blue-50' 
+                          : 'border-gray-200 hover:border-blue-300'
+                      }`}
+                      onClick={() => setInspectionChecklist({ ...inspectionChecklist, documents: !inspectionChecklist.documents })}
+                    >
+                      <Checkbox
+                        checked={inspectionChecklist.documents}
+                        onCheckedChange={(checked) =>
+                          setInspectionChecklist({ ...inspectionChecklist, documents: checked as boolean })
+                        }
+                        className="mt-1 pointer-events-none"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium">Giấy tờ xe</div>
+                        <div className="text-sm text-gray-600">Đăng ký xe, bảo hiểm, phù hiệu</div>
+                      </div>
+                    </div>
 
-        {/* Terms Agreement */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
-        >
-          <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-md mb-6">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-3 p-4 bg-blue-50 border-2 border-blue-200 rounded-xl">
-                <Checkbox id="agree" checked={agreed} onCheckedChange={(checked) => setAgreed(checked as boolean)} className="mt-1" />
-                <label htmlFor="agree" className="flex-1 cursor-pointer">
-                  <div className="font-medium text-gray-900 mb-2">Điều khoản & Hợp đồng thuê xe</div>
-                  <div className="text-sm text-gray-600 space-y-1">
-                    <p>
-                      ✓ Tôi xác nhận đã kiểm tra kỹ xe và đồng ý với tình trạng xe hiện tại
-                    </p>
-                    <p>
-                      ✓ Tôi cam kết trả xe đúng thời gian và địa điểm đã thỏa thuận
-                    </p>
-                    <p>
-                      ✓ Tôi chịu trách nhiệm với các hư hỏng xảy ra trong thời gian thuê
-                    </p>
-                    <p className="pt-2">
-                      <Link href="/terms" className="text-blue-600 hover:underline font-medium">
-                        <FileText className="w-4 h-4 inline mr-1" />
-                        Xem đầy đủ điều khoản
-                      </Link>
+                    <div 
+                      className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                        inspectionChecklist.photos 
+                          ? 'border-blue-500 bg-blue-50' 
+                          : 'border-gray-200 hover:border-blue-300'
+                      }`}
+                      onClick={() => setInspectionChecklist({ ...inspectionChecklist, photos: !inspectionChecklist.photos })}
+                    >
+                      <Checkbox
+                        checked={inspectionChecklist.photos}
+                        onCheckedChange={(checked) =>
+                          setInspectionChecklist({ ...inspectionChecklist, photos: checked as boolean })
+                        }
+                        className="mt-1 pointer-events-none"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium">Chụp ảnh bàn giao</div>
+                        <div className="text-sm text-gray-600">4 góc xe + nội thất</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Inputs */}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Số km hiện tại *</Label>
+                      <Input
+                        type="number"
+                        value={odometerReading}
+                        onChange={(e) => setOdometerReading(e.target.value)}
+                        placeholder="Nhập số km"
+                        className="h-12 text-lg"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Mức pin hiện tại (%) *</Label>
+                      <Input
+                        type="number"
+                        value={batteryLevel}
+                        onChange={(e) => setBatteryLevel(e.target.value)}
+                        min="0"
+                        max="100"
+                        placeholder="0-100"
+                        className="h-12 text-lg"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Ghi chú (nếu có)</Label>
+                    <Textarea
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="Ghi chú về tình trạng xe..."
+                      rows={3}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+          </div>
+
+          {/* Right Column - Summary & Actions */}
+          <div className="lg:col-span-1 space-y-6">
+            <div className="sticky top-24">
+              {/* Progress Card */}
+              <Card className="shadow-md mb-6">
+                <CardHeader className="bg-gray-50 border-b">
+                  <CardTitle className="text-lg">Tiến trình check-in</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {Object.entries(inspectionChecklist).map(([key, checked]) => (
+                      <div key={key} className="flex items-center justify-between">
+                        <span className="text-sm capitalize">{key === 'exterior' ? 'Ngoại thất' : key === 'interior' ? 'Nội thất' : key === 'battery' ? 'Pin' : key === 'documents' ? 'Giấy tờ' : 'Ảnh'}</span>
+                        {checked ? <CheckCircle className="w-4 h-4 text-green-600" /> : <div className="w-4 h-4 rounded-full border-2 border-gray-300" />}
+                      </div>
+                    ))}
+                  </div>
+                  <Progress value={(Object.values(inspectionChecklist).filter(Boolean).length / 5) * 100} className="mt-4" />
+                  <p className="text-xs text-gray-600 mt-2">
+                    {Object.values(inspectionChecklist).filter(Boolean).length}/5 hoàn thành
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Agreement */}
+              <Card className="shadow-md bg-blue-600 text-white mb-6">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      checked={agreed}
+                      onCheckedChange={(checked) => setAgreed(checked as boolean)}
+                      className="mt-1 bg-white border-white"
+                    />
+                    <div className="flex-1 text-sm">
+                      <p className="font-medium mb-2">Xác nhận</p>
+                      <p className="text-blue-100">
+                        Tôi đã kiểm tra xe cùng nhân viên và xác nhận tình trạng xe như mô tả. Tôi cam kết sử dụng xe đúng mục đích và tuân thủ luật giao thông.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Action Button */}
+              <Button
+                onClick={handleCheckin}
+                disabled={!allChecked || isSubmitting}
+                className="w-full h-14 text-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 w-5 h-5 animate-spin" />
+                    Đang xử lý...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="mr-2 w-5 h-5" />
+                    Xác nhận nhận xe
+                  </>
+                )}
+              </Button>
+
+              {!allChecked && (
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg mt-4">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-yellow-800">
+                      Vui lòng hoàn thành tất cả bước kiểm tra và nhập đầy đủ thông tin
                     </p>
                   </div>
-                </label>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.5 }}
-          className="flex gap-4"
-        >
-          <Link href="/dashboard/booking" className="flex-1">
-            <Button variant="outline" className="w-full h-14 text-base bg-white hover:bg-gray-50">
-              Hủy
-            </Button>
-          </Link>
-          <Button
-            disabled={!allChecked}
-            className="flex-1 h-14 text-base bg-gradient-to-r from-blue-600 via-blue-500 to-green-500 hover:from-blue-700 hover:via-blue-600 hover:to-green-600 text-white font-semibold shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all disabled:opacity-50"
-          >
-            <CheckCircle className="mr-2 w-5 h-5" />
-            Xác nhận nhận xe
-          </Button>
-        </motion.div>
-
-        {!allChecked && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-xl"
-          >
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-yellow-800">
-                Vui lòng hoàn thành tất cả các bước kiểm tra và đồng ý với điều khoản để tiếp tục
-              </div>
+                </div>
+              )}
             </div>
-          </motion.div>
-        )}
+          </div>
+        </div>
       </div>
     </div>
   )
 }
-

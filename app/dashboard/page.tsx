@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -19,136 +19,328 @@ import {
   History,
   Settings,
   LogOut,
+  Loader2,
 } from "lucide-react"
 import Link from "next/link"
+import { analyticsService } from "@/services/analyticsService"
+import { rentalOrderService } from "@/services/rentalOrderService"
+import { userService, type UserProfileResponse } from "@/services/userService"
+import { useToast } from "@/hooks/use-toast"
+import { API_CONFIG } from "@/lib/api-config"
+
+const getImageUrl = (path?: string) => {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+  const cleanPath = path.startsWith("/") ? path.substring(1) : path;
+  return `${API_CONFIG.USER_SERVICE_URL}/${cleanPath}`;
+}
 
 export default function RenterDashboard() {
   const [activeTab, setActiveTab] = useState("overview")
+  const [isLoading, setIsLoading] = useState(true)
+  const [userProfile, setUserProfile] = useState<UserProfileResponse | null>(null)
+  const [stats, setStats] = useState({
+    totalRentals: 0,
+    completedRentals: 0,
+    totalSpent: 0,
+    activeRentals: 0,
+  })
+  const [activeRentals, setActiveRentals] = useState<any[]>([])
+  const [upcomingBookings, setUpcomingBookings] = useState<any[]>([])
+  const { toast } = useToast()
 
-  const activeRental = {
-    id: "RNT-001",
-    vehicle: "VinFast VF e34",
-    station: "Điểm thuê Quận 1",
-    startTime: "10:00 AM",
-    endTime: "6:00 PM",
-    battery: 85,
-    distance: 45,
-    status: "active",
+  // Lấy userId từ localStorage
+  const getUserId = () => {
+    const userStr = localStorage.getItem('user')
+    if (userStr) {
+      const user = JSON.parse(userStr)
+      return user.userId || user.id
+    }
+    return null
   }
 
-  const upcomingBookings = [
-    {
-      id: "BK-002",
-      vehicle: "VinFast VF 8",
-      station: "Điểm thuê Quận 3",
-      date: "25/01/2025",
-      time: "9:00 AM",
-    },
-    {
-      id: "BK-003",
-      vehicle: "VinFast VF 5",
-      station: "Điểm thuê Quận 7",
-      date: "28/01/2025",
-      time: "2:00 PM",
-    },
-  ]
+  useEffect(() => {
+    loadDashboardData()
+  }, [])
 
-  const stats = [
-    { label: "Tổng chuyến đi", value: "24", icon: Car, color: "text-blue-600", bg: "bg-blue-50" },
-    { label: "Quãng đường", value: "1,250 km", icon: TrendingUp, color: "text-green-600", bg: "bg-green-50" },
-    { label: "Tiết kiệm CO₂", value: "180 kg", icon: Zap, color: "text-blue-600", bg: "bg-blue-50" },
-    { label: "Điểm thưởng", value: "850", icon: Battery, color: "text-green-600", bg: "bg-green-50" },
+  const loadDashboardData = async () => {
+    setIsLoading(true)
+    const userId = getUserId()
+    
+    if (!userId) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Không tìm thấy thông tin người dùng",
+      })
+      return
+    }
+
+    try {
+      try {
+        const profileResponse = await userService.getCurrentProfile()
+        if (profileResponse.success && profileResponse.data) {
+          setUserProfile(profileResponse.data)
+        }
+      } catch (error) {
+        console.error("Load profile error:", error)
+      }
+
+      const analyticsResponse = await analyticsService.getRenterSummary(userId)
+      if (analyticsResponse.success && analyticsResponse.data) {
+        setStats({
+          totalRentals: analyticsResponse.data.totalRentals,
+          completedRentals: analyticsResponse.data.completedRentals,
+          totalSpent: analyticsResponse.data.totalSpent,
+          activeRentals: 0, // Sẽ tính từ rentals
+        })
+      }
+
+      // Gọi API lấy danh sách rentals
+      const rentalsResponse = await rentalOrderService.getRentalsByRenter(userId, {
+        page: 1,
+        pageSize: 20,
+      })
+      
+      if (rentalsResponse.success && rentalsResponse.data) {
+        const allRentals = rentalsResponse.data.data || []
+        
+        // Lọc active rentals (Status = Active hoặc Pending)
+        const active = allRentals.filter(
+          (r: any) => r.status === "Active" || r.status === "Pending"
+        )
+        setActiveRentals(active)
+        
+        // Lọc upcoming bookings (Status = Pending và startTime > now)
+        const now = new Date()
+        const upcoming = allRentals.filter((r: any) => {
+          if (r.status !== "Pending") return false
+          const startTime = new Date(r.startTime)
+          return startTime > now
+        })
+        setUpcomingBookings(upcoming)
+      }
+
+    } catch (error) {
+      console.error("Load dashboard error:", error)
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: error instanceof Error ? error.message : "Không thể tải dữ liệu dashboard",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(amount)
+  }
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr)
+    return date.toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    })
+  }
+
+  const formatTime = (dateStr: string) => {
+    const date = new Date(dateStr)
+    return date.toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  }
+
+  const getDisplayName = () => {
+    return userProfile?.fullName || "Người dùng"
+  }
+
+  const getAvatarInitials = () => {
+    const name = userProfile?.fullName || "U"
+    const words = name.split(" ")
+    if (words.length >= 2) {
+      return (words[0][0] + words[words.length - 1][0]).toUpperCase()
+    }
+    return name[0].toUpperCase()
+  }
+
+  const handleCancelRental = async (rentalId: string) => {
+    if (!confirm("Bạn có chắc muốn hủy đơn thuê này?")) return
+
+    try {
+      await rentalOrderService.cancelRentalOrder(rentalId)
+      toast({
+        title: "Thành công!",
+        description: "Đã hủy đơn thuê",
+      })
+      loadDashboardData() // Reload data
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: error instanceof Error ? error.message : "Không thể hủy đơn thuê",
+      })
+    }
+  }
+
+  const statsDisplay = [
+    { 
+      label: "Tổng chuyến đi", 
+      value: isLoading ? "..." : stats.totalRentals.toString(), 
+      icon: Car, 
+      color: "text-blue-600", 
+      bg: "bg-blue-50" 
+    },
+    { 
+      label: "Hoàn thành", 
+      value: isLoading ? "..." : stats.completedRentals.toString(), 
+      icon: TrendingUp, 
+      color: "text-green-600", 
+      bg: "bg-green-50" 
+    },
+    { 
+      label: "Tổng chi tiêu", 
+      value: isLoading ? "..." : formatCurrency(stats.totalSpent), 
+      icon: Zap, 
+      color: "text-blue-600", 
+      bg: "bg-blue-50" 
+    },
+    { 
+      label: "Đang thuê", 
+      value: isLoading ? "..." : activeRentals.length.toString(), 
+      icon: Battery, 
+      color: "text-green-600", 
+      bg: "bg-green-50" 
+    },
   ]
 
   return (
-    <div className="min-h-screen bg-surface">
-      {/* Navigation */}
-      <nav className="bg-white border-b border-border sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center">
-              <Zap className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-              EV Station
-            </span>
+    <div className="min-h-screen bg-gray-50">
+      {/* Top Navigation */}
+      <nav className="bg-white border-b shadow-sm fixed top-0 left-0 right-0 z-40">
+        <div className="p-6 py-4 flex items-center justify-between ml-0 lg:ml-72">
+          <div>
+            <h2 className="text-xl font-bold text-foreground">Tổng quan</h2>
+            <p className="text-sm text-muted-foreground">Quản lý chuyến đi của bạn</p>
           </div>
 
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="relative">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" className="relative hover:bg-blue-50 transition-colors">
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
             </Button>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center">
-                <User className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-sm font-medium hidden md:block">Nguyễn Văn A</span>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer">
+              {userProfile?.avatarUrl ? (
+                <img 
+                  src={getImageUrl(userProfile.avatarUrl)}
+                  alt={getDisplayName()}
+                  className="w-9 h-9 rounded-full object-cover shadow-sm"
+                />
+              ) : (
+                <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center shadow-sm">
+                  <span className="text-white text-sm font-semibold">{getAvatarInitials()}</span>
+                </div>
+              )}
+              <span className="text-sm font-medium hidden md:block">{getDisplayName()}</span>
             </div>
           </div>
         </div>
       </nav>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-4 gap-6">
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <Card className="border-0 shadow-lg sticky top-24">
-              <CardContent className="p-4">
-                <nav className="space-y-2">
-                  <Link href="/dashboard">
-                    <Button
-                      variant={activeTab === "overview" ? "default" : "ghost"}
-                      className="w-full justify-start"
-                      onClick={() => setActiveTab("overview")}
-                    >
-                      <Car className="w-4 h-4 mr-2" />
-                      Tổng quan
-                    </Button>
-                  </Link>
-                  <Link href="/dashboard/booking">
-                    <Button variant="ghost" className="w-full justify-start">
-                      <MapPin className="w-4 h-4 mr-2" />
-                      Đặt xe
-                    </Button>
-                  </Link>
-                  <Link href="/dashboard/history">
-                    <Button variant="ghost" className="w-full justify-start">
-                      <History className="w-4 h-4 mr-2" />
-                      Lịch sử
-                    </Button>
-                  </Link>
-                  <Link href="/dashboard/profile">
-                    <Button variant="ghost" className="w-full justify-start">
-                      <User className="w-4 h-4 mr-2" />
-                      Hồ sơ
-                    </Button>
-                  </Link>
-                  <Link href="/dashboard/settings">
-                    <Button variant="ghost" className="w-full justify-start">
-                      <Settings className="w-4 h-4 mr-2" />
-                      Cài đặt
-                    </Button>
-                  </Link>
-                  <div className="pt-4 border-t">
-                    <Link href="/login">
-                      <Button variant="ghost" className="w-full justify-start text-red-600 hover:text-red-700">
-                        <LogOut className="w-4 h-4 mr-2" />
-                        Đăng xuất
-                      </Button>
-                    </Link>
-                  </div>
-                </nav>
-              </CardContent>
-            </Card>
+      {/* Sidebar */}
+      <aside className="fixed left-0 top-0 bottom-0 w-72 bg-white border-r shadow-md z-50 hidden lg:block">
+        <div className="h-full flex flex-col">
+          {/* Logo */}
+          <div className="p-6 border-b bg-blue-600">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-md">
+                <Zap className="w-7 h-7 text-blue-600" />
+              </div>
+              <div>
+                <span className="text-xl font-bold text-white block">
+                  EV Station
+                </span>
+                <span className="text-xs text-blue-100">Rental System</span>
+              </div>
+            </div>
           </div>
 
-          {/* Main Content */}
-          <div className="lg:col-span-3 space-y-6">
+          {/* Navigation Menu */}
+          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+            <Link href="/dashboard">
+              <Button
+                variant={activeTab === "overview" ? "default" : "ghost"}
+                className={`w-full justify-start h-12 text-base transition-all ${
+                  activeTab === "overview" 
+                    ? "bg-blue-600 text-white shadow-md" 
+                    : "hover:bg-blue-50 hover:translate-x-1"
+                }`}
+                onClick={() => setActiveTab("overview")}
+              >
+                <Car className="w-5 h-5 mr-3" />
+                Tổng quan
+              </Button>
+            </Link>
+            
+            <Link href="/dashboard/booking">
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start h-12 text-base hover:bg-green-50 hover:translate-x-1 transition-all"
+              >
+                <MapPin className="w-5 h-5 mr-3" />
+                Đặt xe
+              </Button>
+            </Link>
+            
+            <Link href="/dashboard/history">
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start h-12 text-base hover:bg-purple-50 hover:translate-x-1 transition-all"
+              >
+                <History className="w-5 h-5 mr-3" />
+                Lịch sử
+              </Button>
+            </Link>
+            
+            <Link href="/dashboard/profile">
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start h-12 text-base hover:bg-orange-50 hover:translate-x-1 transition-all"
+              >
+                <User className="w-5 h-5 mr-3" />
+                Hồ sơ
+              </Button>
+            </Link>
+          </nav>
+
+          {/* Logout Section */}
+          <div className="p-4 border-t">
+            <Link href="/login">
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start h-12 text-base text-red-600 hover:text-red-700 hover:bg-red-50 transition-all"
+              >
+                <LogOut className="w-5 h-5 mr-3" />
+                Đăng xuất
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="lg:ml-72 pt-24 min-h-screen">
+        <div className="p-6 py-8 max-w-[1600px] mx-auto space-y-6">
             {/* Welcome Section */}
-            <div className="bg-gradient-to-br from-blue-600 to-green-600 rounded-2xl p-8 text-white shadow-lg">
-              <h1 className="text-3xl font-bold mb-2">Xin chào, Nguyễn Văn A!</h1>
-              <p className="text-blue-50 mb-6">Sẵn sàng cho hành trình xanh hôm nay?</p>
+            <div className="bg-blue-600 rounded-xl p-8 text-white shadow-md">
+              <h1 className="text-3xl font-bold mb-2">Xin chào, {getDisplayName()}!</h1>
+              <p className="text-blue-100 mb-6">Sẵn sàng cho hành trình xanh hôm nay?</p>
               <Link href="/dashboard/booking">
                 <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50">
                   Đặt xe ngay
@@ -159,13 +351,14 @@ export default function RenterDashboard() {
 
             {/* Stats Grid */}
             <div className="grid md:grid-cols-4 gap-4">
-              {stats.map((stat, index) => (
-                <Card key={index} className="border-0 shadow-lg">
+              {statsDisplay.map((stat, index) => (
+                <Card key={index} className="shadow-md">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-2">
-                      <div className={`w-10 h-10 ${stat.bg} rounded-xl flex items-center justify-center`}>
+                      <div className={`w-10 h-10 ${stat.bg} rounded-lg flex items-center justify-center`}>
                         <stat.icon className={`w-5 h-5 ${stat.color}`} />
                       </div>
+                      {isLoading && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
                     </div>
                     <div className="text-2xl font-bold">{stat.value}</div>
                     <div className="text-sm text-muted-foreground">{stat.label}</div>
@@ -175,124 +368,100 @@ export default function RenterDashboard() {
             </div>
 
             {/* Active Rental */}
-            {activeRental && (
-              <Card className="border-0 shadow-lg border-l-4 border-l-green-500">
-                <CardHeader>
+            {isLoading ? (
+              <Card className="shadow-md">
+                <CardContent className="p-12 flex items-center justify-center">
+                  <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                </CardContent>
+              </Card>
+            ) : activeRentals.length > 0 ? (
+              <Card className="shadow-md border-l-4 border-l-green-600">
+                <CardHeader className="bg-green-50 border-b">
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle>Chuyến đi đang diễn ra</CardTitle>
-                      <CardDescription>Mã chuyến: {activeRental.id}</CardDescription>
+                      <CardDescription>Mã chuyến: {activeRentals[0].rentalId}</CardDescription>
                     </div>
-                    <Badge className="bg-green-500 text-white">Đang thuê</Badge>
+                    <Badge className={
+                      activeRentals[0].status === "Active" 
+                        ? "bg-green-600 text-white" 
+                        : "bg-yellow-600 text-white"
+                    }>
+                      {activeRentals[0].status === "Active" ? "Đang thuê" : "Chờ xử lý"}
+                    </Badge>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="pt-6 space-y-4">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-3">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
                         <Car className="w-5 h-5 text-blue-600" />
                         <div>
-                          <div className="text-sm text-muted-foreground">Xe</div>
-                          <div className="font-medium">{activeRental.vehicle}</div>
+                          <div className="text-xs text-gray-500">Xe</div>
+                          <div className="font-medium">ID: {activeRentals[0].vehicleId}</div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
                         <MapPin className="w-5 h-5 text-green-600" />
                         <div>
-                          <div className="text-sm text-muted-foreground">Điểm thuê</div>
-                          <div className="font-medium">{activeRental.station}</div>
+                          <div className="text-xs text-gray-500">Điểm thuê</div>
+                          <div className="font-medium">Branch: {activeRentals[0].branchStartId}</div>
                         </div>
                       </div>
                     </div>
                     <div className="space-y-3">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
                         <Clock className="w-5 h-5 text-blue-600" />
                         <div>
-                          <div className="text-sm text-muted-foreground">Thời gian</div>
+                          <div className="text-xs text-gray-500">Thời gian</div>
                           <div className="font-medium">
-                            {activeRental.startTime} - {activeRental.endTime}
+                            {formatTime(activeRentals[0].startTime)} - {formatTime(activeRentals[0].endTime || activeRentals[0].startTime)}
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
                         <TrendingUp className="w-5 h-5 text-green-600" />
                         <div>
-                          <div className="text-sm text-muted-foreground">Quãng đường</div>
-                          <div className="font-medium">{activeRental.distance} km</div>
+                          <div className="text-xs text-gray-500">Chi phí dự kiến</div>
+                          <div className="font-medium">{formatCurrency(activeRentals[0].estimatedCost)}</div>
                         </div>
                       </div>
                     </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Pin còn lại</span>
-                      <span className="font-medium">{activeRental.battery}%</span>
-                    </div>
-                    <Progress value={activeRental.battery} className="h-2" />
                   </div>
 
                   <div className="flex gap-3">
-                    <Button className="flex-1 bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white">
-                      Xem chi tiết
-                    </Button>
-                    <Button variant="outline" className="flex-1 bg-transparent">
-                      Trả xe
-                    </Button>
+                    <Link href={`/dashboard/rental/${activeRentals[0].rentalId}`} className="flex-1">
+                      <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                        Xem chi tiết
+                      </Button>
+                    </Link>
+                    {activeRentals[0].status === "Pending" && (
+                      <Button 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => handleCancelRental(activeRentals[0].rentalId)}
+                      >
+                        Hủy đơn
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
-            )}
-
-            {/* Upcoming Bookings */}
-            <Card className="border-0 shadow-lg">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Đặt chỗ sắp tới</CardTitle>
-                  <Link href="/dashboard/history">
-                    <Button variant="ghost" size="sm">
-                      Xem tất cả
-                      <ChevronRight className="ml-1 w-4 h-4" />
+            ) : (
+              <Card className="shadow-md">
+                <CardContent className="p-12 text-center">
+                  <Car className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground mb-4">Bạn chưa có chuyến đi nào đang diễn ra</p>
+                  <Link href="/dashboard/booking">
+                    <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                      Đặt xe ngay
                     </Button>
                   </Link>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {upcomingBookings.map((booking) => (
-                  <div
-                    key={booking.id}
-                    className="flex items-center justify-between p-4 bg-surface rounded-xl hover:bg-surface-hover transition-colors"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center">
-                        <Car className="w-6 h-6 text-white" />
-                      </div>
-                      <div>
-                        <div className="font-medium">{booking.vehicle}</div>
-                        <div className="text-sm text-muted-foreground flex items-center gap-2">
-                          <MapPin className="w-3 h-3" />
-                          {booking.station}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-medium">{booking.date}</div>
-                      <div className="text-sm text-muted-foreground">{booking.time}</div>
-                    </div>
-                  </div>
-                ))}
-
-                <Link href="/dashboard/booking">
-                  <Button variant="outline" className="w-full bg-transparent">
-                    <Calendar className="mr-2 w-4 h-4" />
-                    Đặt xe mới
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          </div>
+                </CardContent>
+              </Card>
+            )}
         </div>
-      </div>
+      </main>
     </div>
   )
 }
