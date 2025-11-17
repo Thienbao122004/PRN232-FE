@@ -28,10 +28,7 @@ import { penaltyService } from "@/services/penaltyService"
 import { useToast } from "@/hooks/use-toast"
 
 const PAYMENT_METHODS = [
-  { value: "MoMo", label: "Ví MoMo", icon: Wallet, color: "bg-pink-500" },
-  { value: "ZaloPay", label: "ZaloPay", icon: Smartphone, color: "bg-blue-500" },
-  { value: "CreditCard", label: "Thẻ tín dụng", icon: CreditCard, color: "bg-green-500" },
-  { value: "DebitCard", label: "Thẻ ghi nợ", icon: CreditCard, color: "bg-purple-500" },
+  { value: "VNPAY", label: "VNPAY", icon: CreditCard, color: "bg-blue-600" },
   { value: "Cash", label: "Tiền mặt", icon: Wallet, color: "bg-orange-500" }
 ]
 
@@ -47,7 +44,7 @@ export default function FinalPaymentPage() {
   const [finalPayment, setFinalPayment] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isPaying, setIsPaying] = useState(false)
-  const [paymentMethod, setPaymentMethod] = useState("MoMo")
+  const [paymentMethod, setPaymentMethod] = useState("VNPAY")
 
   useEffect(() => {
     loadData()
@@ -131,30 +128,48 @@ export default function FinalPaymentPage() {
 
     setIsPaying(true)
     try {
-      // Update payment status to Paid
-      await paymentService.createPayment({
-        rentalId: rentalId,
-        amount: Math.abs(finalAmount),
-        paymentMethod: paymentMethod,
-        transactionRef: isRefund ? `REFUND_COMPLETED_${Date.now()}` : `FINAL_PAID_${Date.now()}`
-      })
+      // Nếu chọn VNPAY và không phải hoàn tiền, redirect sang VNPAY
+      if (paymentMethod === "VNPAY" && !isRefund) {
+        const vnpayResponse = await paymentService.createVNPAYPaymentURL({
+          rentalId: rentalId,
+          amount: Math.abs(finalAmount)
+        })
 
-      // Update rental status to Closed
-      await rentalOrderService.updateRentalStatus(rentalId, "Closed")
+        if (vnpayResponse.success && vnpayResponse.data?.paymentUrl) {
+          // Lưu rentalId và payment info vào localStorage
+          localStorage.setItem('vnpay_rental_id', rentalId)
+          localStorage.setItem('vnpay_payment_type', 'FINAL_PAYMENT')
+          localStorage.setItem('vnpay_payment_amount', Math.abs(finalAmount).toString())
+          
+          // Redirect sang VNPAY
+          window.location.href = vnpayResponse.data.paymentUrl
+          return
+        }
+      } else {
+        // Thanh toán bằng phương thức khác hoặc hoàn tiền
+        await paymentService.createPayment({
+          rentalId: rentalId,
+          amount: Math.abs(finalAmount),
+          paymentMethod: paymentMethod,
+          transactionRef: isRefund ? `REFUND_COMPLETED_${Date.now()}` : `FINAL_PAID_${Date.now()}`
+        })
 
-      toast({
-        title: "Thành công!",
-        description: isRefund ? "Đã xử lý hoàn tiền" : "Đã thanh toán thành công"
-      })
+        // Update rental status to Closed
+        await rentalOrderService.updateRentalStatus(rentalId, "Closed")
 
-      router.push(`/dashboard/rental/${rentalId}`)
+        toast({
+          title: "Thành công!",
+          description: isRefund ? "Đã xử lý hoàn tiền" : "Đã thanh toán thành công"
+        })
+
+        router.push(`/dashboard/rental/${rentalId}`)
+      }
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Lỗi",
         description: error instanceof Error ? error.message : "Không thể thanh toán"
       })
-    } finally {
       setIsPaying(false)
     }
   }
