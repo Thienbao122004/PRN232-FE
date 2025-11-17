@@ -180,5 +180,28 @@ export const paymentService = {
 
     return result;
   },
+
+  async createVNPAYPaymentURL(data: {
+    rentalId: string;
+    amount: number;
+  }): Promise<ApiResponse<{ paymentCode: string; paymentUrl: string }>> {
+    const token = authToken.get();
+    const response = await fetch(`${PAYMENT_SERVICE_URL}/api/VNPAY/payment-createURL`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || "Không thể tạo URL thanh toán VNPAY");
+    }
+
+    return result;
+  },
 };
 

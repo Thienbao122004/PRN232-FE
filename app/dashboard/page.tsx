@@ -103,18 +103,28 @@ export default function RenterDashboard() {
       })
       
       if (rentalsResponse.success && rentalsResponse.data) {
-        const allRentals = rentalsResponse.data.data || []
+        const allRentals = Array.isArray(rentalsResponse.data) 
+          ? rentalsResponse.data 
+          : rentalsResponse.data.data || []
         
-        // Lọc active rentals (Status = Active hoặc Pending)
         const active = allRentals.filter(
-          (r: any) => r.status === "Active" || r.status === "Pending"
+          (r: any) => {
+            const excludedStatuses = ["Completed", "Closed", "Cancelled"]
+            return !excludedStatuses.includes(r.status)
+          }
         )
         setActiveRentals(active)
         
-        // Lọc upcoming bookings (Status = Pending và startTime > now)
+        // Update stats
+        setStats(prev => ({
+          ...prev,
+          activeRentals: active.length
+        }))
+        
         const now = new Date()
         const upcoming = allRentals.filter((r: any) => {
-          if (r.status !== "Pending") return false
+          const excludedStatuses = ["Completed", "Closed", "Cancelled", "Active"]
+          if (excludedStatuses.includes(r.status)) return false
           const startTime = new Date(r.startTime)
           return startTime > now
         })
@@ -367,7 +377,6 @@ export default function RenterDashboard() {
               ))}
             </div>
 
-            {/* Active Rental */}
             {isLoading ? (
               <Card className="shadow-md">
                 <CardContent className="p-12 flex items-center justify-center">
@@ -375,78 +384,104 @@ export default function RenterDashboard() {
                 </CardContent>
               </Card>
             ) : activeRentals.length > 0 ? (
-              <Card className="shadow-md border-l-4 border-l-green-600">
-                <CardHeader className="bg-green-50 border-b">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Chuyến đi đang diễn ra</CardTitle>
-                      <CardDescription>Mã chuyến: {activeRentals[0].rentalId}</CardDescription>
-                    </div>
-                    <Badge className={
-                      activeRentals[0].status === "Active" 
-                        ? "bg-green-600 text-white" 
-                        : "bg-yellow-600 text-white"
-                    }>
-                      {activeRentals[0].status === "Active" ? "Đang thuê" : "Chờ xử lý"}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-6 space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                        <Car className="w-5 h-5 text-blue-600" />
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold">Các chuyến đang xử lý</h2>
+                  <Badge className="text-lg px-4 py-2 bg-blue-600">
+                    {activeRentals.length} chuyến
+                  </Badge>
+                </div>
+
+                {activeRentals.map((rental: any) => (
+                  <Card key={rental.rentalId} className="shadow-md border-l-4 border-l-green-600 hover:shadow-lg transition-shadow">
+                    <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50 border-b">
+                      <div className="flex items-center justify-between">
                         <div>
-                          <div className="text-xs text-gray-500">Xe</div>
-                          <div className="font-medium">ID: {activeRentals[0].vehicleId}</div>
+                          <CardTitle className="flex items-center gap-2">
+                            <Car className="w-5 h-5" />
+                            Chuyến đi
+                          </CardTitle>
+                          <CardDescription className="font-mono text-sm mt-1">
+                            Mã: {rental.rentalId}
+                          </CardDescription>
                         </div>
+                        <Badge className={
+                          rental.status === "Active" 
+                            ? "bg-green-600 text-white" 
+                            : rental.status === "Confirmed"
+                            ? "bg-blue-600 text-white"
+                            : rental.status === "Pending"
+                            ? "bg-yellow-600 text-white"
+                            : "bg-purple-600 text-white"
+                        }>
+                          {rental.status === "Active" && "🚗 Đang thuê"}
+                          {rental.status === "Confirmed" && "✅ Đã xác nhận"}
+                          {rental.status === "Pending" && "⏳ Chờ thanh toán"}
+                          {!["Active", "Confirmed", "Pending"].includes(rental.status) && `📋 ${rental.status}`}
+                        </Badge>
                       </div>
-                      <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                        <MapPin className="w-5 h-5 text-green-600" />
-                        <div>
-                          <div className="text-xs text-gray-500">Điểm thuê</div>
-                          <div className="font-medium">Branch: {activeRentals[0].branchStartId}</div>
+                    </CardHeader>
+                    <CardContent className="pt-6 space-y-4">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                            <Car className="w-5 h-5 text-blue-600" />
+                            <div>
+                              <div className="text-xs text-gray-500">Xe</div>
+                              <div className="font-medium text-sm">ID: {rental.vehicleId}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                            <MapPin className="w-5 h-5 text-green-600" />
+                            <div>
+                              <div className="text-xs text-gray-500">Điểm thuê</div>
+                              <div className="font-medium text-sm">Branch: {rental.branchStartId}</div>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                        <Clock className="w-5 h-5 text-blue-600" />
-                        <div>
-                          <div className="text-xs text-gray-500">Thời gian</div>
-                          <div className="font-medium">
-                            {formatTime(activeRentals[0].startTime)} - {formatTime(activeRentals[0].endTime || activeRentals[0].startTime)}
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                            <Clock className="w-5 h-5 text-blue-600" />
+                            <div>
+                              <div className="text-xs text-gray-500">Thời gian</div>
+                              <div className="font-medium text-sm">
+                                {formatTime(rental.startTime)} - {formatTime(rental.endTime || rental.startTime)}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                            <TrendingUp className="w-5 h-5 text-green-600" />
+                            <div>
+                              <div className="text-xs text-gray-500">Chi phí dự kiến</div>
+                              <div className="font-medium text-sm">{formatCurrency(rental.estimatedCost)}</div>
+                            </div>
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                        <TrendingUp className="w-5 h-5 text-green-600" />
-                        <div>
-                          <div className="text-xs text-gray-500">Chi phí dự kiến</div>
-                          <div className="font-medium">{formatCurrency(activeRentals[0].estimatedCost)}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
 
-                  <div className="flex gap-3">
-                    <Link href={`/dashboard/rental/${activeRentals[0].rentalId}`} className="flex-1">
-                      <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                        Xem chi tiết
-                      </Button>
-                    </Link>
-                    {activeRentals[0].status === "Pending" && (
-                      <Button 
-                        variant="outline" 
-                        className="flex-1"
-                        onClick={() => handleCancelRental(activeRentals[0].rentalId)}
-                      >
-                        Hủy đơn
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                      <div className="flex gap-3">
+                        <Link href={`/dashboard/rental/${rental.rentalId}`} className="flex-1">
+                          <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                            {rental.status === "Pending" && "💳 Thanh toán cọc"}
+                            {rental.status === "Confirmed" && "🔑 Tiếp tục luồng"}
+                            {rental.status === "Active" && "📍 Xem chi tiết"}
+                            {!["Pending", "Confirmed", "Active"].includes(rental.status) && "📋 Xem chi tiết"}
+                          </Button>
+                        </Link>
+                        {rental.status !== "Active" && rental.status !== "Completed" && (
+                          <Button 
+                            variant="outline" 
+                            className="flex-1 border-red-200 hover:bg-red-50 hover:border-red-300 text-red-600"
+                            onClick={() => handleCancelRental(rental.rentalId)}
+                          >
+                            🚫 Hủy đơn
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             ) : (
               <Card className="shadow-md">
                 <CardContent className="p-12 text-center">

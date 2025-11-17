@@ -22,10 +22,7 @@ import { paymentService } from "@/services/paymentService"
 import { useToast } from "@/hooks/use-toast"
 
 const PAYMENT_METHODS = [
-  { value: "MoMo", label: "Ví MoMo", icon: Wallet, color: "bg-pink-500" },
-  { value: "ZaloPay", label: "ZaloPay", icon: Smartphone, color: "bg-blue-500" },
-  { value: "CreditCard", label: "Thẻ tín dụng", icon: CreditCard, color: "bg-green-500" },
-  { value: "DebitCard", label: "Thẻ ghi nợ", icon: CreditCard, color: "bg-purple-500" },
+  { value: "VNPAY", label: "VNPAY", icon: CreditCard, color: "bg-blue-600" },
   { value: "Cash", label: "Tiền mặt", icon: Wallet, color: "bg-orange-500" }
 ]
 
@@ -40,7 +37,7 @@ export default function PayDepositPage() {
   const [rental, setRental] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isPaying, setIsPaying] = useState(false)
-  const [paymentMethod, setPaymentMethod] = useState("MoMo")
+  const [paymentMethod, setPaymentMethod] = useState("VNPAY")
 
   useEffect(() => {
     loadData()
@@ -69,29 +66,44 @@ export default function PayDepositPage() {
   const handlePayment = async () => {
     setIsPaying(true)
     try {
-      await paymentService.createPayment({
-        rentalId: rentalId,
-        amount: depositAmount,
-        paymentMethod: paymentMethod,
-        transactionRef: `DEPOSIT_${rentalId}_${Date.now()}`
-      })
+      if (paymentMethod === "VNPAY") {
+        const vnpayResponse = await paymentService.createVNPAYPaymentURL({
+          rentalId: rentalId,
+          amount: depositAmount
+        })
 
-      // Update rental status to Confirmed
-      await rentalOrderService.updateRentalStatus(rentalId, "Confirmed")
+        if (vnpayResponse.success && vnpayResponse.data?.paymentUrl) {
+          localStorage.setItem('vnpay_rental_id', rentalId)
+          localStorage.setItem('vnpay_payment_type', 'DEPOSIT')
+          localStorage.setItem('vnpay_payment_amount', depositAmount.toString())
+          
+          window.location.href = vnpayResponse.data.paymentUrl
+          return
+        }
+      } else {
+        await paymentService.createPayment({
+          rentalId: rentalId,
+          amount: depositAmount,
+          paymentMethod: paymentMethod,
+          transactionRef: `DEPOSIT_${rentalId}_${Date.now()}`
+        })
 
-      toast({
-        title: "Thành công!",
-        description: "Đã thanh toán đặt cọc thành công"
-      })
+        // Update rental status to Confirmed
+        await rentalOrderService.updateRentalStatus(rentalId, "Confirmed")
 
-      router.push(`/dashboard/rental/${rentalId}`)
+        toast({
+          title: "Thành công!",
+          description: "Đã thanh toán đặt cọc thành công"
+        })
+
+        router.push(`/dashboard/rental/${rentalId}`)
+      }
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Lỗi",
         description: error instanceof Error ? error.message : "Không thể thanh toán"
       })
-    } finally {
       setIsPaying(false)
     }
   }
