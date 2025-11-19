@@ -39,7 +39,7 @@ export const checkinService = {
     data: CreateCheckinRequest
   ): Promise<ApiResponse<CheckinResponse>> {
     const token = authToken.get();
-    const response = await fetch(`${CHECKIN_SERVICE_URL}/api/checkin`, {
+    const response = await fetch(`${CHECKIN_SERVICE_URL}/api/rental/checkin`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -79,7 +79,7 @@ export const checkinService = {
     if (params?.status) queryParams.append("status", params.status);
 
     const response = await fetch(
-      `${CHECKIN_SERVICE_URL}/api/checkin?${queryParams}`,
+      `${CHECKIN_SERVICE_URL}/api/rental/checkin?${queryParams}`,
       {
         method: "GET",
         headers: {
@@ -101,7 +101,7 @@ export const checkinService = {
   async getCheckinById(checkinId: string): Promise<ApiResponse<CheckinResponse>> {
     const token = authToken.get();
     const response = await fetch(
-      `${CHECKIN_SERVICE_URL}/api/checkin/${checkinId}`,
+      `${CHECKIN_SERVICE_URL}/api/rental/checkin/${checkinId}`,
       {
         method: "GET",
         headers: {
@@ -148,7 +148,7 @@ export const checkinService = {
   ): Promise<ApiResponse<CheckinResponse>> {
     const token = authToken.get();
     const response = await fetch(
-      `${CHECKIN_SERVICE_URL}/api/checkin/${checkinId}/status`,
+      `${CHECKIN_SERVICE_URL}/api/rental/checkin/${checkinId}/status`,
       {
         method: "PUT",
         headers: {

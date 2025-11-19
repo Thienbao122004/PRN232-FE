@@ -4,11 +4,9 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
 import {
   Zap,
   MapPin,
-  Calendar,
   Clock,
   Battery,
   TrendingUp,
@@ -17,9 +15,14 @@ import {
   Bell,
   User,
   History,
-  Settings,
   LogOut,
   Loader2,
+  CreditCard,
+  Key,
+  FileText,
+  XCircle,
+  CheckCircle,
+  Timer,
 } from "lucide-react"
 import Link from "next/link"
 import { analyticsService } from "@/services/analyticsService"
@@ -32,6 +35,10 @@ const getImageUrl = (path?: string) => {
   if (!path) return "";
   if (path.startsWith("http")) return path;
   const cleanPath = path.startsWith("/") ? path.substring(1) : path;
+  // Route static files qua Gateway với prefix userGateway
+  if (cleanPath.startsWith("uploads")) {
+    return `${API_CONFIG.GATEWAY_URL}/userGateway/${cleanPath}`;
+  }
   return `${API_CONFIG.USER_SERVICE_URL}/${cleanPath}`;
 }
 
@@ -102,10 +109,11 @@ export default function RenterDashboard() {
         pageSize: 20,
       })
       
-      if (rentalsResponse.success && rentalsResponse.data) {
-        const allRentals = Array.isArray(rentalsResponse.data) 
-          ? rentalsResponse.data 
-          : rentalsResponse.data.data || []
+      if (rentalsResponse.success) {
+        const responseData = rentalsResponse as any
+        const allRentals = Array.isArray(responseData.data) 
+          ? responseData.data 
+          : []
         
         const active = allRentals.filter(
           (r: any) => {
@@ -414,10 +422,30 @@ export default function RenterDashboard() {
                             ? "bg-yellow-600 text-white"
                             : "bg-purple-600 text-white"
                         }>
-                          {rental.status === "Active" && "🚗 Đang thuê"}
-                          {rental.status === "Confirmed" && "✅ Đã xác nhận"}
-                          {rental.status === "Pending" && "⏳ Chờ thanh toán"}
-                          {!["Active", "Confirmed", "Pending"].includes(rental.status) && `📋 ${rental.status}`}
+                          {rental.status === "Active" && (
+                            <span className="flex items-center gap-1">
+                              <Car className="w-4 h-4" />
+                              Đang thuê
+                            </span>
+                          )}
+                          {rental.status === "Confirmed" && (
+                            <span className="flex items-center gap-1">
+                              <CheckCircle className="w-4 h-4" />
+                              Đã xác nhận
+                            </span>
+                          )}
+                          {rental.status === "Pending" && (
+                            <span className="flex items-center gap-1">
+                              <Timer className="w-4 h-4" />
+                              Chờ thanh toán
+                            </span>
+                          )}
+                          {!["Active", "Confirmed", "Pending"].includes(rental.status) && (
+                            <span className="flex items-center gap-1">
+                              <FileText className="w-4 h-4" />
+                              {rental.status}
+                            </span>
+                          )}
                         </Badge>
                       </div>
                     </CardHeader>
@@ -461,20 +489,41 @@ export default function RenterDashboard() {
 
                       <div className="flex gap-3">
                         <Link href={`/dashboard/rental/${rental.rentalId}`} className="flex-1">
-                          <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                            {rental.status === "Pending" && "💳 Thanh toán cọc"}
-                            {rental.status === "Confirmed" && "🔑 Tiếp tục luồng"}
-                            {rental.status === "Active" && "📍 Xem chi tiết"}
-                            {!["Pending", "Confirmed", "Active"].includes(rental.status) && "📋 Xem chi tiết"}
+                          <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2">
+                            {rental.status === "Pending" && (
+                              <>
+                                <CreditCard className="w-4 h-4" />
+                                Thanh toán cọc
+                              </>
+                            )}
+                            {rental.status === "Confirmed" && (
+                              <>
+                                <Key className="w-4 h-4" />
+                                Tiếp tục luồng
+                              </>
+                            )}
+                            {rental.status === "Active" && (
+                              <>
+                                <MapPin className="w-4 h-4" />
+                                Xem chi tiết
+                              </>
+                            )}
+                            {!["Pending", "Confirmed", "Active"].includes(rental.status) && (
+                              <>
+                                <FileText className="w-4 h-4" />
+                                Xem chi tiết
+                              </>
+                            )}
                           </Button>
                         </Link>
                         {rental.status !== "Active" && rental.status !== "Completed" && (
                           <Button 
                             variant="outline" 
-                            className="flex-1 border-red-200 hover:bg-red-50 hover:border-red-300 text-red-600"
+                            className="flex-1 border-red-200 hover:bg-red-50 hover:border-red-300 text-red-600 flex items-center justify-center gap-2"
                             onClick={() => handleCancelRental(rental.rentalId)}
                           >
-                            🚫 Hủy đơn
+                            <XCircle className="w-4 h-4" />
+                            Hủy đơn
                           </Button>
                         )}
                       </div>

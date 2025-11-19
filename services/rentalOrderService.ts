@@ -38,14 +38,12 @@ export interface RentalOrderDetailResponse {
   returnedAt?: string;
 }
 
-// ==================== SERVICE ====================
 export const rentalOrderService = {
-  // Tạo đơn thuê xe mới
   async createRentalOrder(
     data: CreateRentalOrderRequest
   ): Promise<ApiResponse<RentalOrderResponse>> {
     const token = authToken.get();
-    const response = await fetch(`${RENTAL_SERVICE_URL}/api/rentals`, {
+    const response = await fetch(`${RENTAL_SERVICE_URL}/api/rental/rentals`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -81,7 +79,7 @@ export const rentalOrderService = {
     if (params?.endDate) queryParams.append("endDate", params.endDate);
 
     const response = await fetch(
-      `${RENTAL_SERVICE_URL}/api/rentals?${queryParams}`,
+      `${RENTAL_SERVICE_URL}/api/rental/rentals?${queryParams}`,
       {
         method: "GET",
         headers: {
@@ -104,7 +102,7 @@ export const rentalOrderService = {
   async getRentalOrderById(rentalId: string): Promise<ApiResponse<RentalOrderResponse>> {
     const token = authToken.get();
     const response = await fetch(
-      `${RENTAL_SERVICE_URL}/api/rentals/${rentalId}`,
+      `${RENTAL_SERVICE_URL}/api/rental/rentals/${rentalId}`,
       {
         method: "GET",
         headers: {
@@ -127,7 +125,7 @@ export const rentalOrderService = {
   async getRentalOrderDetails(rentalId: string): Promise<ApiResponse<RentalOrderDetailResponse[]>> {
     const token = authToken.get();
     const response = await fetch(
-      `${RENTAL_SERVICE_URL}/api/rentals/${rentalId}/details`,
+      `${RENTAL_SERVICE_URL}/api/rental/rentals/${rentalId}/details`,
       {
         method: "GET",
         headers: {
@@ -172,7 +170,7 @@ export const rentalOrderService = {
     if (params?.endDate) queryParams.append("endDate", params.endDate);
 
     const response = await fetch(
-      `${RENTAL_SERVICE_URL}/api/rentals/renter/${renterId}?${queryParams}`,
+      `${RENTAL_SERVICE_URL}/api/rental/rentals/renter/${renterId}?${queryParams}`,
       {
         method: "GET",
         headers: {
@@ -195,7 +193,7 @@ export const rentalOrderService = {
   async cancelRentalOrder(rentalId: string): Promise<ApiResponse<null>> {
     const token = authToken.get();
     const response = await fetch(
-      `${RENTAL_SERVICE_URL}/api/rentals/${rentalId}/cancel`,
+      `${RENTAL_SERVICE_URL}/api/rental/rentals/${rentalId}/cancel`,
       {
         method: "PUT",
         headers: {
@@ -214,11 +212,10 @@ export const rentalOrderService = {
     return result;
   },
 
-  // ✅ Cập nhật trạng thái đơn thuê
   async updateRentalStatus(rentalId: string, status: string): Promise<ApiResponse<RentalOrderResponse>> {
     const token = authToken.get();
     const response = await fetch(
-      `${RENTAL_SERVICE_URL}/api/rentals/${rentalId}/status`,
+      `${RENTAL_SERVICE_URL}/api/rental/rentals/${rentalId}/status`,
       {
         method: "PUT",
         headers: {
