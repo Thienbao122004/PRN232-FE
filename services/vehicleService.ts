@@ -35,7 +35,7 @@ export const vehicleService = {
   // Lấy tất cả xe
   async getAllVehicles(): Promise<ApiResponse<VehicleResponse[]>> {
     const token = authToken.get();
-    const response = await fetch(`${FLEET_SERVICE_URL}/api/Vehicle`, {
+    const response = await fetch(`${FLEET_SERVICE_URL}/api/fleet/Vehicle`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -63,7 +63,7 @@ export const vehicleService = {
   // Lấy chi tiết xe theo ID
   async getVehicleById(vehicleId: string): Promise<ApiResponse<VehicleResponse>> {
     const token = authToken.get();
-    const response = await fetch(`${FLEET_SERVICE_URL}/api/Vehicle/${vehicleId}`, {
+    const response = await fetch(`${FLEET_SERVICE_URL}/api/fleet/Vehicle/${vehicleId}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -92,7 +92,7 @@ export const vehicleService = {
   // Lấy xe theo trạng thái
   async getVehiclesByStatus(status: string): Promise<ApiResponse<VehicleResponse[]>> {
     const token = authToken.get();
-    const response = await fetch(`${FLEET_SERVICE_URL}/api/Vehicle/status/${status}`, {
+    const response = await fetch(`${FLEET_SERVICE_URL}/api/fleet/Vehicle/status/${status}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -121,7 +121,7 @@ export const vehicleService = {
   // Lấy xe theo loại
   async getVehiclesByType(typeId: string): Promise<ApiResponse<VehicleResponse[]>> {
     const token = authToken.get();
-    const response = await fetch(`${FLEET_SERVICE_URL}/api/Vehicle/type/${typeId}`, {
+    const response = await fetch(`${FLEET_SERVICE_URL}/api/fleet/Vehicle/type/${typeId}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -150,7 +150,7 @@ export const vehicleService = {
   // Lấy tóm tắt thông tin xe
   async getVehicleSummary(): Promise<ApiResponse<any>> {
     const token = authToken.get();
-    const response = await fetch(`${FLEET_SERVICE_URL}/api/Vehicle/summary`, {
+    const response = await fetch(`${FLEET_SERVICE_URL}/api/fleet/Vehicle/summary`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -181,7 +181,7 @@ export const vehicleService = {
   // Lấy tất cả loại xe
   async getAllVehicleTypes(): Promise<ApiResponse<VehicleTypeResponse[]>> {
     const token = authToken.get();
-    const response = await fetch(`${FLEET_SERVICE_URL}/api/TypeVehicle`, {
+    const response = await fetch(`${FLEET_SERVICE_URL}/api/fleet/TypeVehicle`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -210,7 +210,7 @@ export const vehicleService = {
   // Lấy chi tiết loại xe
   async getVehicleTypeById(typeId: string): Promise<ApiResponse<VehicleTypeResponse>> {
     const token = authToken.get();
-    const response = await fetch(`${FLEET_SERVICE_URL}/api/TypeVehicle/${typeId}`, {
+    const response = await fetch(`${FLEET_SERVICE_URL}/api/fleet/TypeVehicle/${typeId}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

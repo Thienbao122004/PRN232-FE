@@ -43,7 +43,7 @@ export const checkoutService = {
     data: CreateCheckoutRequest
   ): Promise<ApiResponse<CheckoutResponse>> {
     const token = authToken.get();
-    const response = await fetch(`${CHECKOUT_SERVICE_URL}/api/checkout`, {
+    const response = await fetch(`${CHECKOUT_SERVICE_URL}/api/rental/checkout`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -75,7 +75,7 @@ export const checkoutService = {
     if (params?.status) queryParams.append("status", params.status);
 
     const response = await fetch(
-      `${CHECKOUT_SERVICE_URL}/api/checkout?${queryParams}`,
+      `${CHECKOUT_SERVICE_URL}/api/rental/checkout?${queryParams}`,
       {
         method: "GET",
         headers: {
@@ -98,7 +98,7 @@ export const checkoutService = {
   async getCheckoutById(checkoutId: string): Promise<ApiResponse<CheckoutResponse>> {
     const token = authToken.get();
     const response = await fetch(
-      `${CHECKOUT_SERVICE_URL}/api/checkout/${checkoutId}`,
+      `${CHECKOUT_SERVICE_URL}/api/rental/checkout/${checkoutId}`,
       {
         method: "GET",
         headers: {
@@ -147,7 +147,7 @@ export const checkoutService = {
   ): Promise<ApiResponse<CheckoutResponse>> {
     const token = authToken.get();
     const response = await fetch(
-      `${CHECKOUT_SERVICE_URL}/api/checkout/${checkoutId}/status`,
+      `${CHECKOUT_SERVICE_URL}/api/rental/checkout/${checkoutId}/status`,
       {
         method: "PUT",
         headers: {

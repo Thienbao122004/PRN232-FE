@@ -87,7 +87,7 @@ export const userService = {
   // Lấy profile của người dùng hiện tại
   async getCurrentProfile(): Promise<ApiResponse<UserProfileResponse>> {
     const token = authToken.get();
-    const response = await fetch(`${USER_SERVICE_URL}/api/user/profile`, {
+    const response = await fetch(`${USER_SERVICE_URL}/userGateway/profile`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -112,7 +112,7 @@ export const userService = {
   async getProfileById(userId: string): Promise<ApiResponse<UserProfileResponse>> {
     const token = authToken.get();
     const response = await fetch(
-      `${USER_SERVICE_URL}/api/user/profile/${userId}`,
+      `${USER_SERVICE_URL}/userGateway/profile/${userId}`,
       {
         method: "GET",
         headers: {
@@ -140,7 +140,7 @@ export const userService = {
     data: UpdateProfileRequest
   ): Promise<ApiResponse<UserProfileResponse>> {
     const token = authToken.get();
-    const response = await fetch(`${USER_SERVICE_URL}/api/user/profile`, {
+    const response = await fetch(`${USER_SERVICE_URL}/userGateway/profile`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -169,7 +169,7 @@ export const userService = {
     formData.append("documentType", documentType);
     formData.append("file", file);
 
-    const response = await fetch(`${USER_SERVICE_URL}/api/user/documents`, {
+    const response = await fetch(`${USER_SERVICE_URL}/userGateway/documents`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -192,7 +192,7 @@ export const userService = {
   ): Promise<ApiResponse<VerificationStatusResponse>> {
     const token = authToken.get();
     const response = await fetch(
-      `${USER_SERVICE_URL}/api/user/${userId}/verification-status`,
+      `${USER_SERVICE_URL}/userGateway/${userId}/verification-status`,
       {
         method: "GET",
         headers: {
@@ -217,7 +217,7 @@ export const userService = {
   ): Promise<ApiResponse<{ message: string }>> {
     const token = authToken.get();
     const response = await fetch(
-      `${USER_SERVICE_URL}/api/user/${userId}/verify`,
+      `${USER_SERVICE_URL}/userGateway/${userId}/verify`,
       {
         method: "PUT",
         headers: {
