@@ -1,109 +1,120 @@
-"use client";
+'use client'
 
-import type React from "react";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
+import { GoogleLoginButton } from '@/components/google-login-button'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useToast } from '@/hooks/use-toast'
+import { authToken, userInfo } from '@/lib/auth'
+import { authService } from '@/services/authService'
+import { motion } from 'framer-motion'
 import {
-  Zap,
-  Mail,
-  Lock,
-  Chrome,
   ArrowLeft,
-  Sparkles,
-  Shield,
   Clock,
-  CheckCircle,
-  Star,
   Eye,
   EyeOff,
-} from "lucide-react";
-import Link from "next/link";
-import Image from "next/image";
-import { useTranslations } from "next-intl";
-import { motion } from "framer-motion";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { authService } from "@/services/authService";
-import { useRouter } from "next/navigation";
-import { authToken, userInfo } from "@/lib/auth";
-import { useToast } from "@/hooks/use-toast";
-import { GoogleLoginButton } from "@/components/google-login-button";
+  Lock,
+  Mail,
+  Shield,
+  Sparkles,
+  Zap,
+} from 'lucide-react'
+import { useTranslations } from 'next-intl'
+import Image from 'next/image'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import type React from 'react'
+import { useState } from 'react'
 
 export default function LoginPage() {
-  const t = useTranslations("login");
-  const router = useRouter();
-  const { toast } = useToast();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [activeTab, setActiveTab] = useState("login");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const t = useTranslations('login')
+  const router = useRouter()
+  const { toast } = useToast()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [fullName, setFullName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [activeTab, setActiveTab] = useState('login')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+    e.preventDefault()
+    setIsLoading(true)
 
     try {
-      const response = await authService.login({ email, password });
-      
+      const response = await authService.login({ email, password })
+
       if (response.success && response.token) {
-        authToken.set(response.token);
+        authToken.set(response.token)
+
+        // Get role from JWT token
+        const role = authToken.getRole()
+
         userInfo.set({
           userId: response.userId,
           userName: response.userName,
           email: response.email,
-        });
-        
+          role: role,
+        })
+
         toast({
-          title: "Đăng nhập thành công!",
+          title: 'Đăng nhập thành công!',
           description: `Chào mừng ${response.userName || response.email}`,
-          variant: "success",
-        });
+          variant: 'success',
+        })
+
+        // Redirect theo role (case-insensitive)
+        const userRole = (role || '').toLowerCase()
+        const redirectPath =
+          userRole === 'manager' || userRole === 'admin'
+            ? '/admin'
+            : userRole === 'staff'
+            ? '/staff'
+            : '/dashboard'
 
         setTimeout(() => {
-          router.push("/dashboard");
-        }, 500);
+          router.push(redirectPath)
+        }, 500)
       } else {
         toast({
-          title: "Đăng nhập thất bại",
-          description: "Vui lòng kiểm tra lại thông tin đăng nhập",
-          variant: "destructive",
-        });
+          title: 'Đăng nhập thất bại',
+          description: 'Vui lòng kiểm tra lại thông tin đăng nhập',
+          variant: 'destructive',
+        })
       }
     } catch (err: any) {
       toast({
-        title: "Lỗi đăng nhập",
-        description: err.message || "Có lỗi xảy ra khi đăng nhập",
-        variant: "destructive",
-      });
+        title: 'Lỗi đăng nhập',
+        description: err.message || 'Có lỗi xảy ra khi đăng nhập',
+        variant: 'destructive',
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+    e.preventDefault()
+
     if (password !== confirmPassword) {
       toast({
-        title: "Mật khẩu không khớp",
-        description: "Vui lòng kiểm tra lại mật khẩu xác nhận",
-        variant: "destructive",
-      });
-      return;
+        title: 'Mật khẩu không khớp',
+        description: 'Vui lòng kiểm tra lại mật khẩu xác nhận',
+        variant: 'destructive',
+      })
+      return
     }
 
-    setIsLoading(true);
+    setIsLoading(true)
 
     try {
-      const [firstName, ...lastNameParts] = fullName.trim().split(" ");
-      const lastName = lastNameParts.join(" ") || firstName;
+      const [firstName, ...lastNameParts] = fullName.trim().split(' ')
+      const lastName = lastNameParts.join(' ') || firstName
 
       const response = await authService.register({
         firstName,
@@ -111,42 +122,56 @@ export default function LoginPage() {
         email,
         password,
         phone,
-      });
+      })
 
       if (response.success && response.token) {
-        authToken.set(response.token);
+        authToken.set(response.token)
+
+        // Get role from JWT token
+        const role = authToken.getRole()
+
         userInfo.set({
           userId: response.userId,
           userName: response.userName,
           email: response.email,
-        });
+          role: role,
+        })
 
         toast({
-          title: "Đăng ký thành công!",
-          description: "Tài khoản của bạn đã được tạo thành công",
-          variant: "success",
-        });
+          title: 'Đăng ký thành công!',
+          description: 'Tài khoản của bạn đã được tạo thành công',
+          variant: 'success',
+        })
+
+        // Redirect theo role (mặc định user mới là Customer)
+        const userRole = (role || '').toLowerCase()
+        const redirectPath =
+          userRole === 'manager' || userRole === 'admin'
+            ? '/admin'
+            : userRole === 'staff'
+            ? '/staff'
+            : '/dashboard'
 
         setTimeout(() => {
-          router.push("/dashboard");
-        }, 500);
+          router.push(redirectPath)
+        }, 500)
       } else {
         toast({
-          title: "Đăng ký thất bại",
-          description: "Vui lòng kiểm tra lại thông tin đăng ký",
-          variant: "destructive",
-        });
+          title: 'Đăng ký thất bại',
+          description: 'Vui lòng kiểm tra lại thông tin đăng ký',
+          variant: 'destructive',
+        })
       }
     } catch (err: any) {
       toast({
-        title: "Lỗi đăng ký",
-        description: err.message || "Có lỗi xảy ra khi đăng ký",
-        variant: "destructive",
-      });
+        title: 'Lỗi đăng ký',
+        description: err.message || 'Có lỗi xảy ra khi đăng ký',
+        variant: 'destructive',
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
     <div className="min-h-screen flex relative overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-green-50">
@@ -172,21 +197,21 @@ export default function LoginPage() {
             className="inline-flex items-center gap-2 text-white/90 hover:text-white transition-colors group"
           >
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-            <span className="font-medium">{t("backToHome")}</span>
+            <span className="font-medium">{t('backToHome')}</span>
           </Link>
 
-            <div className="space-y-6 max-w-xl">
+          <div className="space-y-6 max-w-xl">
             <div className="flex gap-2 items-center">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20">
                 <Sparkles className="w-4 h-4 text-green-300" />
                 <span className="text-sm font-medium text-white">
-                  {t("badge")}
+                  {t('badge')}
                 </span>
               </div>
             </div>
 
             <h1 className="text-6xl font-bold text-white leading-tight tracking-tight">
-              {t("welcome")}
+              {t('welcome')}
               <br />
               <span className="bg-gradient-to-r from-green-300 to-blue-300 bg-clip-text text-transparent">
                 EV Station
@@ -194,7 +219,7 @@ export default function LoginPage() {
             </h1>
 
             <p className="text-xl text-blue-100 leading-relaxed">
-              {t("subtitle")}
+              {t('subtitle')}
             </p>
           </div>
         </div>
@@ -203,28 +228,28 @@ export default function LoginPage() {
           <Card className="bg-white/10 backdrop-blur-md border-white/20 p-6 hover:bg-white/15 transition-all">
             <Clock className="w-8 h-8 text-green-300 mb-3" />
             <div className="text-2xl font-bold text-white mb-1">
-              {t("features.quickBooking.time")}
+              {t('features.quickBooking.time')}
             </div>
             <div className="text-sm text-blue-100">
-              {t("features.quickBooking.label")}
+              {t('features.quickBooking.label')}
             </div>
           </Card>
           <Card className="bg-white/10 backdrop-blur-md border-white/20 p-6 hover:bg-white/15 transition-all">
             <Zap className="w-8 h-8 text-yellow-300 mb-3" />
             <div className="text-2xl font-bold text-white mb-1">
-              {t("features.vehicles.count")}
+              {t('features.vehicles.count')}
             </div>
             <div className="text-sm text-blue-100">
-              {t("features.vehicles.label")}
+              {t('features.vehicles.label')}
             </div>
           </Card>
           <Card className="bg-white/10 backdrop-blur-md border-white/20 p-6 hover:bg-white/15 transition-all">
             <Shield className="w-8 h-8 text-blue-300 mb-3" />
             <div className="text-2xl font-bold text-white mb-1">
-              {t("features.support.time")}
+              {t('features.support.time')}
             </div>
             <div className="text-sm text-blue-100">
-              {t("features.support.label")}
+              {t('features.support.label')}
             </div>
           </Card>
         </div>
@@ -271,7 +296,7 @@ export default function LoginPage() {
                     <span className="inline-flex items-center gap-2">
                       <Sparkles className="w-5 h-5 text-blue-600" />
                       <span className="bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-                        {activeTab === "login" ? t("title") : t("signUp")}
+                        {activeTab === 'login' ? t('title') : t('signUp')}
                       </span>
                     </span>
                     <span className="mt-2 block h-1 w-16 rounded-full bg-gradient-to-r from-blue-600 to-green-500" />
@@ -282,7 +307,7 @@ export default function LoginPage() {
                     transition={{ delay: 0.3, duration: 0.5 }}
                     className="text-gray-600"
                   >
-                    {t("description")}
+                    {t('description')}
                   </motion.p>
                 </div>
 
@@ -294,10 +319,10 @@ export default function LoginPage() {
                 >
                   <TabsList className="w-full">
                     <TabsTrigger value="login" className="flex-1">
-                      {t("signIn")}
+                      {t('signIn')}
                     </TabsTrigger>
                     <TabsTrigger value="register" className="flex-1">
-                      {t("signUp")}
+                      {t('signUp')}
                     </TabsTrigger>
                   </TabsList>
 
@@ -314,7 +339,7 @@ export default function LoginPage() {
                           htmlFor="email"
                           className="text-sm font-semibold text-gray-700"
                         >
-                          {t("email")}
+                          {t('email')}
                         </Label>
                         <div className="relative">
                           <Mail className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
@@ -335,13 +360,13 @@ export default function LoginPage() {
                           htmlFor="password"
                           className="text-sm font-semibold text-gray-700"
                         >
-                          {t("password")}
+                          {t('password')}
                         </Label>
                         <div className="relative">
                           <Lock className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
                           <Input
                             id="password"
-                            type={showPassword ? "text" : "password"}
+                            type={showPassword ? 'text' : 'password'}
                             placeholder="••••••••"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
@@ -352,8 +377,8 @@ export default function LoginPage() {
                             type="button"
                             aria-label={
                               showPassword
-                                ? t("hidePassword")
-                                : t("showPassword")
+                                ? t('hidePassword')
+                                : t('showPassword')
                             }
                             onClick={() => setShowPassword((v) => !v)}
                             className="absolute right-4 top-3.5 p-2 text-gray-500 hover:text-gray-700"
@@ -378,14 +403,14 @@ export default function LoginPage() {
                             htmlFor="remember"
                             className="text-sm text-gray-700 font-medium"
                           >
-                            {t("remember")}
+                            {t('remember')}
                           </label>
                         </div>
                         <Link
                           href="/forgot-password"
                           className="text-sm text-blue-600 hover:text-blue-700 font-semibold"
                         >
-                          {t("forgotPassword")}
+                          {t('forgotPassword')}
                         </Link>
                       </div>
 
@@ -394,7 +419,7 @@ export default function LoginPage() {
                         className="w-full h-14 bg-gradient-to-r from-blue-600 via-blue-500 to-green-500 hover:from-blue-700 hover:via-blue-600 hover:to-green-600 text-white font-semibold text-base shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all hover:scale-[1.02]"
                         disabled={isLoading}
                       >
-                        {isLoading ? t("signingIn") : t("signIn")}
+                        {isLoading ? t('signingIn') : t('signIn')}
                       </Button>
                     </motion.form>
 
@@ -409,7 +434,7 @@ export default function LoginPage() {
                       </div>
                       <div className="relative flex justify-center text-sm">
                         <span className="bg-white px-4 text-gray-500 font-medium">
-                          {t("orContinueWith")}
+                          {t('orContinueWith')}
                         </span>
                       </div>
                     </motion.div>
@@ -436,7 +461,7 @@ export default function LoginPage() {
                           htmlFor="fullName"
                           className="text-sm font-semibold text-gray-700"
                         >
-                          {t("fullName")}
+                          {t('fullName')}
                         </Label>
                         <Input
                           id="fullName"
@@ -452,7 +477,7 @@ export default function LoginPage() {
                           htmlFor="emailReg"
                           className="text-sm font-semibold text-gray-700"
                         >
-                          {t("email")}
+                          {t('email')}
                         </Label>
                         <Input
                           id="emailReg"
@@ -486,12 +511,12 @@ export default function LoginPage() {
                           htmlFor="passwordReg"
                           className="text-sm font-semibold text-gray-700"
                         >
-                          {t("password")}
+                          {t('password')}
                         </Label>
                         <div className="relative">
                           <Input
                             id="passwordReg"
-                            type={showPassword ? "text" : "password"}
+                            type={showPassword ? 'text' : 'password'}
                             placeholder="••••••••"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
@@ -502,8 +527,8 @@ export default function LoginPage() {
                             type="button"
                             aria-label={
                               showPassword
-                                ? t("hidePassword")
-                                : t("showPassword")
+                                ? t('hidePassword')
+                                : t('showPassword')
                             }
                             onClick={() => setShowPassword((v) => !v)}
                             className="absolute right-3 top-3.5 p-2 text-gray-500 hover:text-gray-700"
@@ -521,12 +546,12 @@ export default function LoginPage() {
                           htmlFor="confirmPassword"
                           className="text-sm font-semibold text-gray-700"
                         >
-                          {t("confirmPassword")}
+                          {t('confirmPassword')}
                         </Label>
                         <div className="relative">
                           <Input
                             id="confirmPassword"
-                            type={showConfirmPassword ? "text" : "password"}
+                            type={showConfirmPassword ? 'text' : 'password'}
                             placeholder="••••••••"
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
@@ -537,8 +562,8 @@ export default function LoginPage() {
                             type="button"
                             aria-label={
                               showConfirmPassword
-                                ? t("hidePassword")
-                                : t("showPassword")
+                                ? t('hidePassword')
+                                : t('showPassword')
                             }
                             onClick={() => setShowConfirmPassword((v) => !v)}
                             className="absolute right-3 top-3.5 p-2 text-gray-500 hover:text-gray-700"
@@ -557,7 +582,7 @@ export default function LoginPage() {
                         className="w-full h-14 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-semibold text-base shadow-lg transition-all hover:scale-[1.02]"
                         disabled={isLoading}
                       >
-                        {isLoading ? t("signingUp") : t("signUp")}
+                        {isLoading ? t('signingUp') : t('signUp')}
                       </Button>
                     </motion.form>
                   </TabsContent>
@@ -568,5 +593,5 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
-  );
+  )
 }

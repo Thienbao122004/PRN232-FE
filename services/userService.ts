@@ -1,69 +1,71 @@
-import { API_CONFIG } from "@/lib/api-config";
-import { authToken } from "@/lib/auth";
-import type { ApiResponse } from "@/types/api";
+import { API_CONFIG } from '@/lib/api-config'
+import { authToken } from '@/lib/auth'
+import type { ApiResponse } from '@/types/api'
 
-const USER_SERVICE_URL = API_CONFIG.USER_SERVICE_URL;
+const USER_SERVICE_URL = API_CONFIG.USER_SERVICE_URL
 
 // ==================== TYPES ====================
 // Backend response từ API
 export interface UserProfileApiResponse {
-  userId: string;
-  email: string;
-  userName: string;
-  fullName: string;
-  dob?: string;
-  address?: string;
-  avatarUrl?: string;
-  cccdUrl?: string;
-  drivingLicenseUrl?: string;
-  phoneNumber?: string;
-  status: string;
-  role: string;
+  userId: string
+  email: string
+  userName: string
+  fullName: string
+  dob?: string
+  address?: string
+  avatarUrl?: string
+  cccdUrl?: string
+  drivingLicenseUrl?: string
+  phoneNumber?: string
+  status: string
+  role: string
 }
 
 // Frontend sử dụng (normalized)
 export interface UserProfileResponse {
-  userId: string;
-  fullName: string;
-  email: string;
-  phoneNumber?: string;
-  dateOfBirth?: string;
-  address?: string;
-  cccdNumber?: string;
-  cccdImageUrl?: string;
-  drivingLicenseNumber?: string;
-  drivingLicenseImageUrl?: string;
-  avatarUrl?: string;
-  isVerified: boolean;
-  status?: string;
-  role?: string;
+  userId: string
+  fullName: string
+  email: string
+  phoneNumber?: string
+  dateOfBirth?: string
+  address?: string
+  cccdNumber?: string
+  cccdImageUrl?: string
+  drivingLicenseNumber?: string
+  drivingLicenseImageUrl?: string
+  avatarUrl?: string
+  isVerified: boolean
+  status?: string
+  role?: string
 }
 
 export interface UpdateProfileRequest {
-  fullName?: string;
-  phoneNumber?: string;
-  dateOfBirth?: string;
-  address?: string;
-  cccdNumber?: string;
-  drivingLicenseNumber?: string;
+  fullName?: string
+  phoneNumber?: string
+  dateOfBirth?: string
+  address?: string
+  cccdNumber?: string
+  drivingLicenseNumber?: string
 }
 
 export interface UploadDocumentRequest {
-  documentType: "CCCD" | "DrivingLicense" | "Avatar";
-  file: File;
+  documentType: 'CCCD' | 'DrivingLicense' | 'Avatar'
+  file: File
 }
 
 export interface VerificationStatusResponse {
-  userId: string;
-  isVerified: boolean;
-  cccdVerified: boolean;
-  drivingLicenseVerified: boolean;
-  verifiedAt?: string;
-  verifiedBy?: string;
+  userId: string
+  isVerified: boolean
+  cccdVerified: boolean
+  drivingLicenseVerified: boolean
+  verifiedAt?: string
+  verifiedBy?: string
 }
 
 // Helper function để normalize data từ backend sang frontend
-function normalizeUserProfile(apiData: UserProfileApiResponse): UserProfileResponse {
+function normalizeUserProfile(
+  apiData: UserProfileApiResponse
+): UserProfileResponse {
   return {
     userId: apiData.userId,
     fullName: apiData.fullName,
@@ -76,163 +78,221 @@ function normalizeUserProfile(apiData: UserProfileApiResponse): UserProfileRespo
     drivingLicenseNumber: undefined, // Backend không trả về số license riêng
     drivingLicenseImageUrl: apiData.drivingLicenseUrl,
     avatarUrl: apiData.avatarUrl,
-    isVerified: apiData.status === "Active", // Giả định Active = verified
+    isVerified: apiData.status === 'Active', // Giả định Active = verified
     status: apiData.status,
     role: apiData.role,
-  };
+  }
 }
 
 // ==================== SERVICE ====================
 export const userService = {
   // Lấy profile của người dùng hiện tại
   async getCurrentProfile(): Promise<ApiResponse<UserProfileResponse>> {
-    const token = authToken.get();
+    const token = authToken.get()
+
+    console.log('[userService] getCurrentProfile - Token exists:', !!token)
+    console.log(
+      '[userService] Token (first 20 chars):',
+      token?.substring(0, 20)
+    )
+
     const response = await fetch(`${USER_SERVICE_URL}/api/user/profile`, {
-      method: "GET",
+      method: 'GET',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-    });
+    })
 
-    const result: ApiResponse<UserProfileApiResponse> = await response.json();
-    
-    if (!response.ok || !result.success) {
-      throw new Error(result.message || "Không thể lấy thông tin profile");
+    console.log('[userService] Response status:', response.status)
+    console.log(
+      '[userService] Response headers:',
+      Object.fromEntries(response.headers.entries())
+    )
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('[userService] Error response:', errorText)
+      throw new Error(`Failed to fetch profile: ${response.status}`)
+    }
+
+    // Check if response has content
+    const contentType = response.headers.get('content-type')
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error('Invalid response format')
+    }
+
+    const text = await response.text()
+    if (!text) {
+      throw new Error('Empty response from server')
+    }
+
+    const result: ApiResponse<UserProfileApiResponse> = JSON.parse(text)
+
+    if (!result.success) {
+      throw new Error(result.message || 'Không thể lấy thông tin profile')
     }
 
     // Normalize data trước khi return
     return {
       ...result,
       data: result.data ? normalizeUserProfile(result.data) : undefined,
-    } as ApiResponse<UserProfileResponse>;
+    } as ApiResponse<UserProfileResponse>
   },
 
   // Lấy profile theo User ID
-  async getProfileById(userId: string): Promise<ApiResponse<UserProfileResponse>> {
-    const token = authToken.get();
+  async getProfileById(
+    userId: string
+  ): Promise<ApiResponse<UserProfileResponse>> {
+    const token = authToken.get()
     const response = await fetch(
       `${USER_SERVICE_URL}/api/user/profile/${userId}`,
       {
-        method: "GET",
+        method: 'GET',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
       }
-    );
+    )
 
-    const result: ApiResponse<UserProfileApiResponse> = await response.json();
-    
+    const result: ApiResponse<UserProfileApiResponse> = await response.json()
+
     if (!response.ok || !result.success) {
-      throw new Error(result.message || "Không thể lấy thông tin profile");
+      throw new Error(result.message || 'Không thể lấy thông tin profile')
     }
 
     // Normalize data trước khi return
     return {
       ...result,
       data: result.data ? normalizeUserProfile(result.data) : undefined,
-    } as ApiResponse<UserProfileResponse>;
+    } as ApiResponse<UserProfileResponse>
   },
 
   // Cập nhật profile
   async updateProfile(
     data: UpdateProfileRequest
   ): Promise<ApiResponse<UserProfileResponse>> {
-    const token = authToken.get();
+    const token = authToken.get()
     const response = await fetch(`${USER_SERVICE_URL}/api/user/profile`, {
-      method: "PUT",
+      method: 'PUT',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(data),
-    });
+    })
 
-    const result = await response.json();
-    
+    const result = await response.json()
+
     if (!response.ok || !result.success) {
-      throw new Error(result.message || "Không thể cập nhật profile");
+      throw new Error(result.message || 'Không thể cập nhật profile')
     }
 
-    return result;
+    return result
   },
 
   // Upload tài liệu (CCCD, Driving License, Avatar)
   async uploadDocument(
-    documentType: "CCCD" | "DrivingLicense" | "Avatar",
+    documentType: 'CCCD' | 'DrivingLicense' | 'Avatar',
     file: File
   ): Promise<ApiResponse<{ fileUrl: string }>> {
-    const token = authToken.get();
-    const formData = new FormData();
-    
-    formData.append("documentType", documentType);
-    formData.append("file", file);
+    const token = authToken.get()
+    const formData = new FormData()
+
+    formData.append('documentType', documentType)
+    formData.append('file', file)
 
     const response = await fetch(`${USER_SERVICE_URL}/api/user/documents`, {
-      method: "POST",
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
       },
       body: formData,
-    });
+    })
 
-    const result = await response.json();
-    
+    const result = await response.json()
+
     if (!response.ok || !result.success) {
-      throw new Error(result.message || "Không thể upload tài liệu");
+      throw new Error(result.message || 'Không thể upload tài liệu')
     }
 
-    return result;
+    return result
   },
 
   // Lấy trạng thái xác thực (Staff only)
   async getVerificationStatus(
     userId: string
   ): Promise<ApiResponse<VerificationStatusResponse>> {
-    const token = authToken.get();
+    const token = authToken.get()
     const response = await fetch(
       `${USER_SERVICE_URL}/api/user/${userId}/verification-status`,
       {
-        method: "GET",
+        method: 'GET',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
       }
-    );
+    )
 
-    const result = await response.json();
-    
+    const result = await response.json()
+
     if (!response.ok || !result.success) {
-      throw new Error(result.message || "Không thể lấy trạng thái xác thực");
+      throw new Error(result.message || 'Không thể lấy trạng thái xác thực')
     }
 
-    return result;
+    return result
   },
 
   // Xác thực người dùng (Staff only)
-  async verifyUser(
-    userId: string
-  ): Promise<ApiResponse<{ message: string }>> {
-    const token = authToken.get();
+  async verifyUser(userId: string): Promise<ApiResponse<{ message: string }>> {
+    const token = authToken.get()
     const response = await fetch(
       `${USER_SERVICE_URL}/api/user/${userId}/verify`,
       {
-        method: "PUT",
+        method: 'PUT',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
       }
-    );
+    )
 
-    const result = await response.json();
-    
+    const result = await response.json()
+
     if (!response.ok || !result.success) {
-      throw new Error(result.message || "Không thể xác thực người dùng");
+      throw new Error(result.message || 'Không thể xác thực người dùng')
     }
 
-    return result;
+    return result
   },
-};
+
+  // Lấy danh sách users theo role
+  async getUsersByRole(role: string): Promise<UserProfileApiResponse[]> {
+    const token = authToken.get()
+    console.log(token)
+    const response = await fetch(
+      `${API_CONFIG.GATEWAY_URL}/userGateway/?role=${role}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error('Không thể lấy danh sách người dùng')
+    }
+
+    const result: ApiResponse<UserProfileApiResponse[]> = await response.json()
+
+    if (!result.success) {
+      throw new Error(result.message || 'Không thể lấy danh sách người dùng')
+    }
+
+    return result.data || []
+  },
+}

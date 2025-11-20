@@ -1,25 +1,61 @@
-"use client"
+'use client'
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
-  Zap,
-  Car,
-  Users,
-  MapPin,
-  TrendingUp,
-  DollarSign,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { authToken } from '@/lib/auth'
+import {
   AlertTriangle,
   BarChart3,
-  Settings,
-  LogOut,
   Bell,
+  Calendar,
+  Car,
+  Clock,
+  DollarSign,
+  LogOut,
+  MapPin,
+  Settings,
   Shield,
-} from "lucide-react"
-import Link from "next/link"
+  TrendingUp,
+  User,
+  Users,
+  Zap,
+} from 'lucide-react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
 export default function AdminDashboard() {
+  const router = useRouter()
+
+  // Check role and redirect if needed
+  useEffect(() => {
+    const token = authToken.get()
+    if (!token) {
+      router.push('/login')
+      return
+    }
+
+    const role = authToken.getRole()
+    const userRole = (role || '').toLowerCase()
+
+    if (userRole !== 'manager' && userRole !== 'admin') {
+      // Not authorized for admin panel
+      if (userRole === 'staff') {
+        router.push('/staff')
+      } else {
+        router.push('/dashboard')
+      }
+      return
+    }
+  }, [])
+
   const systemStats = {
     totalRevenue: 125000000,
     totalRentals: 1250,
@@ -32,38 +68,38 @@ export default function AdminDashboard() {
   }
 
   const revenueByStation = [
-    { station: "Quận 1", revenue: 28500000, rentals: 285 },
-    { station: "Quận 3", revenue: 22300000, rentals: 223 },
-    { station: "Quận 7", revenue: 19800000, rentals: 198 },
-    { station: "Quận 2", revenue: 18200000, rentals: 182 },
-    { station: "Quận 5", revenue: 15600000, rentals: 156 },
+    { station: 'Quận 1', revenue: 28500000, rentals: 285 },
+    { station: 'Quận 3', revenue: 22300000, rentals: 223 },
+    { station: 'Quận 7', revenue: 19800000, rentals: 198 },
+    { station: 'Quận 2', revenue: 18200000, rentals: 182 },
+    { station: 'Quận 5', revenue: 15600000, rentals: 156 },
   ]
 
   const alerts = [
     {
-      id: "A-001",
-      type: "maintenance",
-      message: "3 xe cần bảo trì định kỳ trong tuần này",
-      priority: "medium",
+      id: 'A-001',
+      type: 'maintenance',
+      message: '3 xe cần bảo trì định kỳ trong tuần này',
+      priority: 'medium',
     },
     {
-      id: "A-002",
-      type: "customer",
-      message: "2 khiếu nại mới từ khách hàng cần xử lý",
-      priority: "high",
+      id: 'A-002',
+      type: 'customer',
+      message: '2 khiếu nại mới từ khách hàng cần xử lý',
+      priority: 'high',
     },
     {
-      id: "A-003",
-      type: "staff",
-      message: "Điểm thuê Quận 7 thiếu nhân viên ca chiều",
-      priority: "medium",
+      id: 'A-003',
+      type: 'staff',
+      message: 'Điểm thuê Quận 7 thiếu nhân viên ca chiều',
+      priority: 'medium',
     },
   ]
 
   const topPerformers = [
-    { name: "Trần Văn B", station: "Quận 1", transactions: 156, rating: 4.9 },
-    { name: "Nguyễn Thị C", station: "Quận 3", transactions: 142, rating: 4.8 },
-    { name: "Lê Văn D", station: "Quận 7", transactions: 138, rating: 4.9 },
+    { name: 'Trần Văn B', station: 'Quận 1', transactions: 156, rating: 4.9 },
+    { name: 'Nguyễn Thị C', station: 'Quận 3', transactions: 142, rating: 4.8 },
+    { name: 'Lê Văn D', station: 'Quận 7', transactions: 138, rating: 4.9 },
   ]
 
   return (
@@ -94,7 +130,9 @@ export default function AdminDashboard() {
               </div>
               <div className="hidden md:block">
                 <div className="text-sm font-medium">Admin</div>
-                <div className="text-xs text-muted-foreground">Quản trị hệ thống</div>
+                <div className="text-xs text-muted-foreground">
+                  Quản trị hệ thống
+                </div>
               </div>
             </div>
           </div>
@@ -138,6 +176,56 @@ export default function AdminDashboard() {
                       Nhân viên
                     </Button>
                   </Link>
+
+                  {/* Workforce Management Submenu */}
+                  <div className="pl-2 space-y-1 border-l-2 border-gray-200">
+                    <Link href="/admin/staff/schedule">
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start text-sm"
+                      >
+                        <Calendar className="w-3 h-3 mr-2" />
+                        Tổng quan lịch
+                      </Button>
+                    </Link>
+                    <Link href="/admin/staff/schedule/shifts">
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start text-sm"
+                      >
+                        <Clock className="w-3 h-3 mr-2" />
+                        Quản lý ca
+                      </Button>
+                    </Link>
+                    <Link href="/admin/staff/schedule/assign">
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start text-sm"
+                      >
+                        <Users className="w-3 h-3 mr-2" />
+                        Phân công
+                      </Button>
+                    </Link>
+                    <Link href="/admin/staff/schedule/branch">
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start text-sm"
+                      >
+                        <MapPin className="w-3 h-3 mr-2" />
+                        Lịch chi nhánh
+                      </Button>
+                    </Link>
+                    <Link href="/admin/staff/schedule/staff">
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start text-sm"
+                      >
+                        <User className="w-3 h-3 mr-2" />
+                        Lịch nhân viên
+                      </Button>
+                    </Link>
+                  </div>
+
                   <Link href="/admin/analytics">
                     <Button variant="ghost" className="w-full justify-start">
                       <TrendingUp className="w-4 h-4 mr-2" />
@@ -152,7 +240,10 @@ export default function AdminDashboard() {
                   </Link>
                   <div className="pt-4 border-t">
                     <Link href="/login">
-                      <Button variant="ghost" className="w-full justify-start text-red-600 hover:text-red-700">
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start text-red-600 hover:text-red-700"
+                      >
                         <LogOut className="w-4 h-4 mr-2" />
                         Đăng xuất
                       </Button>
@@ -167,7 +258,9 @@ export default function AdminDashboard() {
           <div className="lg:col-span-3 space-y-6">
             {/* Welcome Section */}
             <div className="bg-gradient-to-br from-blue-600 to-green-600 rounded-2xl p-8 text-white shadow-lg">
-              <h1 className="text-3xl font-bold mb-2">Bảng điều khiển quản trị</h1>
+              <h1 className="text-3xl font-bold mb-2">
+                Bảng điều khiển quản trị
+              </h1>
               <p className="text-blue-50">Tổng quan hệ thống EV Station</p>
             </div>
 
@@ -180,9 +273,15 @@ export default function AdminDashboard() {
                       <DollarSign className="w-5 h-5 text-green-600" />
                     </div>
                   </div>
-                  <div className="text-2xl font-bold">{(systemStats.totalRevenue / 1000000).toFixed(0)}M</div>
-                  <div className="text-sm text-muted-foreground">Doanh thu tháng</div>
-                  <div className="text-xs text-green-600 mt-1">+12.5% so với tháng trước</div>
+                  <div className="text-2xl font-bold">
+                    {(systemStats.totalRevenue / 1000000).toFixed(0)}M
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Doanh thu tháng
+                  </div>
+                  <div className="text-xs text-green-600 mt-1">
+                    +12.5% so với tháng trước
+                  </div>
                 </CardContent>
               </Card>
 
@@ -193,9 +292,15 @@ export default function AdminDashboard() {
                       <Car className="w-5 h-5 text-blue-600" />
                     </div>
                   </div>
-                  <div className="text-2xl font-bold">{systemStats.totalRentals}</div>
-                  <div className="text-sm text-muted-foreground">Chuyến thuê</div>
-                  <div className="text-xs text-blue-600 mt-1">+8.3% so với tháng trước</div>
+                  <div className="text-2xl font-bold">
+                    {systemStats.totalRentals}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Chuyến thuê
+                  </div>
+                  <div className="text-xs text-blue-600 mt-1">
+                    +8.3% so với tháng trước
+                  </div>
                 </CardContent>
               </Card>
 
@@ -206,9 +311,15 @@ export default function AdminDashboard() {
                       <Users className="w-5 h-5 text-green-600" />
                     </div>
                   </div>
-                  <div className="text-2xl font-bold">{systemStats.totalCustomers}</div>
-                  <div className="text-sm text-muted-foreground">Khách hàng</div>
-                  <div className="text-xs text-green-600 mt-1">+156 khách mới</div>
+                  <div className="text-2xl font-bold">
+                    {systemStats.totalCustomers}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Khách hàng
+                  </div>
+                  <div className="text-xs text-green-600 mt-1">
+                    +156 khách mới
+                  </div>
                 </CardContent>
               </Card>
 
@@ -219,9 +330,13 @@ export default function AdminDashboard() {
                       <MapPin className="w-5 h-5 text-blue-600" />
                     </div>
                   </div>
-                  <div className="text-2xl font-bold">{systemStats.stations}</div>
+                  <div className="text-2xl font-bold">
+                    {systemStats.stations}
+                  </div>
                   <div className="text-sm text-muted-foreground">Điểm thuê</div>
-                  <div className="text-xs text-blue-600 mt-1">{systemStats.staff} nhân viên</div>
+                  <div className="text-xs text-blue-600 mt-1">
+                    {systemStats.staff} nhân viên
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -230,33 +345,61 @@ export default function AdminDashboard() {
             <Card className="border-0 shadow-lg">
               <CardHeader>
                 <CardTitle>Tình trạng đội xe</CardTitle>
-                <CardDescription>Trạng thái xe trên toàn hệ thống</CardDescription>
+                <CardDescription>
+                  Trạng thái xe trên toàn hệ thống
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid md:grid-cols-4 gap-4">
                   <div className="p-4 bg-green-50 rounded-xl">
-                    <div className="text-sm text-muted-foreground mb-1">Sẵn sàng</div>
-                    <div className="text-3xl font-bold text-green-600">{systemStats.availableVehicles}</div>
+                    <div className="text-sm text-muted-foreground mb-1">
+                      Sẵn sàng
+                    </div>
+                    <div className="text-3xl font-bold text-green-600">
+                      {systemStats.availableVehicles}
+                    </div>
                     <div className="text-xs text-muted-foreground mt-1">
-                      {((systemStats.availableVehicles / systemStats.totalVehicles) * 100).toFixed(0)}% tổng số
+                      {(
+                        (systemStats.availableVehicles /
+                          systemStats.totalVehicles) *
+                        100
+                      ).toFixed(0)}
+                      % tổng số
                     </div>
                   </div>
                   <div className="p-4 bg-blue-50 rounded-xl">
-                    <div className="text-sm text-muted-foreground mb-1">Đang thuê</div>
-                    <div className="text-3xl font-bold text-blue-600">{systemStats.activeRentals}</div>
+                    <div className="text-sm text-muted-foreground mb-1">
+                      Đang thuê
+                    </div>
+                    <div className="text-3xl font-bold text-blue-600">
+                      {systemStats.activeRentals}
+                    </div>
                     <div className="text-xs text-muted-foreground mt-1">
-                      {((systemStats.activeRentals / systemStats.totalVehicles) * 100).toFixed(0)}% tổng số
+                      {(
+                        (systemStats.activeRentals /
+                          systemStats.totalVehicles) *
+                        100
+                      ).toFixed(0)}
+                      % tổng số
                     </div>
                   </div>
                   <div className="p-4 bg-yellow-50 rounded-xl">
-                    <div className="text-sm text-muted-foreground mb-1">Đang sạc</div>
+                    <div className="text-sm text-muted-foreground mb-1">
+                      Đang sạc
+                    </div>
                     <div className="text-3xl font-bold text-yellow-600">8</div>
-                    <div className="text-xs text-muted-foreground mt-1">6% tổng số</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      6% tổng số
+                    </div>
                   </div>
                   <div className="p-4 bg-red-50 rounded-xl">
-                    <div className="text-sm text-muted-foreground mb-1">Bảo trì</div>
+                    <div className="text-sm text-muted-foreground mb-1">
+                      Bảo trì
+                    </div>
                     <div className="text-3xl font-bold text-red-600">4</div>
-                    <div className="text-xs text-muted-foreground mt-1">3% tổng số</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      3% tổng số
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -268,10 +411,16 @@ export default function AdminDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle>Doanh thu theo điểm thuê</CardTitle>
-                    <CardDescription>Top 5 điểm có doanh thu cao nhất</CardDescription>
+                    <CardDescription>
+                      Top 5 điểm có doanh thu cao nhất
+                    </CardDescription>
                   </div>
                   <Link href="/admin/analytics">
-                    <Button variant="outline" size="sm" className="bg-transparent">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="bg-transparent"
+                    >
                       Xem chi tiết
                     </Button>
                   </Link>
@@ -288,14 +437,23 @@ export default function AdminDashboard() {
                         <span className="font-medium">{station.station}</span>
                       </div>
                       <div className="text-right">
-                        <div className="font-bold text-blue-600">{(station.revenue / 1000000).toFixed(1)}M</div>
-                        <div className="text-xs text-muted-foreground">{station.rentals} chuyến</div>
+                        <div className="font-bold text-blue-600">
+                          {(station.revenue / 1000000).toFixed(1)}M
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {station.rentals} chuyến
+                        </div>
                       </div>
                     </div>
                     <div className="h-2 bg-surface rounded-full overflow-hidden">
                       <div
                         className="h-full bg-gradient-to-r from-blue-500 to-green-500"
-                        style={{ width: `${(station.revenue / revenueByStation[0].revenue) * 100}%` }}
+                        style={{
+                          width: `${
+                            (station.revenue / revenueByStation[0].revenue) *
+                            100
+                          }%`,
+                        }}
                       />
                     </div>
                   </div>
@@ -314,13 +472,17 @@ export default function AdminDashboard() {
                   <div
                     key={alert.id}
                     className={`p-4 rounded-xl border-l-4 ${
-                      alert.priority === "high" ? "bg-red-50 border-l-red-500" : "bg-yellow-50 border-l-yellow-500"
+                      alert.priority === 'high'
+                        ? 'bg-red-50 border-l-red-500'
+                        : 'bg-yellow-50 border-l-yellow-500'
                     }`}
                   >
                     <div className="flex items-start gap-3">
                       <AlertTriangle
                         className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
-                          alert.priority === "high" ? "text-red-600" : "text-yellow-600"
+                          alert.priority === 'high'
+                            ? 'text-red-600'
+                            : 'text-yellow-600'
                         }`}
                       />
                       <div className="flex-1">
@@ -329,15 +491,25 @@ export default function AdminDashboard() {
                           <Badge
                             variant="secondary"
                             className={
-                              alert.priority === "high" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"
+                              alert.priority === 'high'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-yellow-100 text-yellow-700'
                             }
                           >
-                            {alert.priority === "high" ? "Ưu tiên cao" : "Ưu tiên trung bình"}
+                            {alert.priority === 'high'
+                              ? 'Ưu tiên cao'
+                              : 'Ưu tiên trung bình'}
                           </Badge>
-                          <span className="text-xs text-muted-foreground">Mã: {alert.id}</span>
+                          <span className="text-xs text-muted-foreground">
+                            Mã: {alert.id}
+                          </span>
                         </div>
                       </div>
-                      <Button size="sm" variant="outline" className="bg-transparent">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="bg-transparent"
+                      >
                         Xử lý
                       </Button>
                     </div>
@@ -350,22 +522,31 @@ export default function AdminDashboard() {
             <Card className="border-0 shadow-lg">
               <CardHeader>
                 <CardTitle>Nhân viên xuất sắc</CardTitle>
-                <CardDescription>Top 3 nhân viên có hiệu suất cao nhất tháng này</CardDescription>
+                <CardDescription>
+                  Top 3 nhân viên có hiệu suất cao nhất tháng này
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 {topPerformers.map((performer, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-surface rounded-xl">
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-4 bg-surface rounded-xl"
+                  >
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
                         {index + 1}
                       </div>
                       <div>
                         <div className="font-medium">{performer.name}</div>
-                        <div className="text-sm text-muted-foreground">{performer.station}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {performer.station}
+                        </div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-bold">{performer.transactions} giao dịch</div>
+                      <div className="font-bold">
+                        {performer.transactions} giao dịch
+                      </div>
                       <div className="text-sm text-yellow-600 flex items-center gap-1">
                         <span>⭐</span>
                         {performer.rating}
