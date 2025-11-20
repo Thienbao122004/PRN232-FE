@@ -1,47 +1,53 @@
 'use client'
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
-  Zap,
-  MapPin,
-  Clock,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { useToast } from '@/hooks/use-toast'
+import { API_CONFIG } from '@/lib/api-config'
+import { authToken } from '@/lib/auth'
+import { analyticsService } from '@/services/analyticsService'
+import { rentalOrderService } from '@/services/rentalOrderService'
+import { userService, type UserProfileResponse } from '@/services/userService'
+import {
   Battery,
   Bell,
   Car,
-  ChevronRight,
-  History,
-  LogOut,
-  Loader2,
-  CreditCard,
-  Key,
-  FileText,
-  XCircle,
   CheckCircle,
+  ChevronRight,
+  Clock,
+  CreditCard,
+  FileText,
+  History,
+  Key,
+  Loader2,
+  LogOut,
+  MapPin,
   Timer,
-  User,
   TrendingUp,
-} from "lucide-react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { authToken } from "@/lib/auth"
-import { analyticsService } from "@/services/analyticsService"
-import { rentalOrderService } from "@/services/rentalOrderService"
-import { userService, type UserProfileResponse } from "@/services/userService"
-import { useToast } from "@/hooks/use-toast"
-import { API_CONFIG } from "@/lib/api-config"
+  User,
+  XCircle,
+  Zap,
+} from 'lucide-react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 const getImageUrl = (path?: string) => {
-  if (!path) return "";
-  if (path.startsWith("http")) return path;
-  const cleanPath = path.startsWith("/") ? path.substring(1) : path;
+  if (!path) return ''
+  if (path.startsWith('http')) return path
+  const cleanPath = path.startsWith('/') ? path.substring(1) : path
   // Route static files qua Gateway với prefix userGateway
-  if (cleanPath.startsWith("uploads")) {
-    return `${API_CONFIG.GATEWAY_URL}/userGateway/${cleanPath}`;
+  if (cleanPath.startsWith('uploads')) {
+    return `${API_CONFIG.GATEWAY_URL}/userGateway/${cleanPath}`
   }
-  return `${API_CONFIG.USER_SERVICE_URL}/${cleanPath}`;
+  return `${API_CONFIG.USER_SERVICE_URL}/${cleanPath}`
 }
 
 export default function RenterDashboard() {
@@ -125,10 +131,13 @@ export default function RenterDashboard() {
       }
 
       // Gọi API lấy danh sách rentals
-      const rentalsResponse = await rentalOrderService.getRentalsByRenter(userId, {
-        page: 1,
-        pageSize: 20,
-      })
+      const rentalsResponse = await rentalOrderService.getRentalsByRenter(
+        userId,
+        {
+          page: 1,
+          pageSize: 20,
+        }
+      )
 
       if (rentalsResponse.success) {
         const responseData = rentalsResponse as any
@@ -136,23 +145,26 @@ export default function RenterDashboard() {
           ? responseData.data
           : []
 
-        const active = allRentals.filter(
-          (r: any) => {
-            const excludedStatuses = ["Completed", "Closed", "Cancelled"]
-            return !excludedStatuses.includes(r.status)
-          }
-        )
+        const active = allRentals.filter((r: any) => {
+          const excludedStatuses = ['Completed', 'Closed', 'Cancelled']
+          return !excludedStatuses.includes(r.status)
+        })
         setActiveRentals(active)
 
         // Update stats
-        setStats(prev => ({
+        setStats((prev) => ({
           ...prev,
-          activeRentals: active.length
+          activeRentals: active.length,
         }))
 
         const now = new Date()
         const upcoming = allRentals.filter((r: any) => {
-          const excludedStatuses = ["Completed", "Closed", "Cancelled", "Active"]
+          const excludedStatuses = [
+            'Completed',
+            'Closed',
+            'Cancelled',
+            'Active',
+          ]
           if (excludedStatuses.includes(r.status)) return false
           const startTime = new Date(r.startTime)
           return startTime > now
@@ -421,7 +433,9 @@ export default function RenterDashboard() {
                     </div>
                   </div>
                   <div className="text-2xl font-bold">{stat.value}</div>
-                  <div className="text-sm text-muted-foreground">{stat.label}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {stat.label}
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -443,7 +457,10 @@ export default function RenterDashboard() {
               </div>
 
               {activeRentals.map((rental: any) => (
-                <Card key={rental.rentalId} className="shadow-md border-l-4 border-l-green-600 hover:shadow-lg transition-shadow">
+                <Card
+                  key={rental.rentalId}
+                  className="shadow-md border-l-4 border-l-green-600 hover:shadow-lg transition-shadow"
+                >
                   <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50 border-b">
                     <div className="flex items-center justify-between">
                       <div>
@@ -455,34 +472,38 @@ export default function RenterDashboard() {
                           Mã: {rental.rentalId}
                         </CardDescription>
                       </div>
-                      <Badge className={
-                        rental.status === "Active"
-                          ? "bg-green-600 text-white"
-                          : rental.status === "Confirmed"
-                          ? "bg-blue-600 text-white"
-                          : rental.status === "Pending"
-                          ? "bg-yellow-600 text-white"
-                          : "bg-purple-600 text-white"
-                      }>
-                        {rental.status === "Active" && (
+                      <Badge
+                        className={
+                          rental.status === 'Active'
+                            ? 'bg-green-600 text-white'
+                            : rental.status === 'Confirmed'
+                            ? 'bg-blue-600 text-white'
+                            : rental.status === 'Pending'
+                            ? 'bg-yellow-600 text-white'
+                            : 'bg-purple-600 text-white'
+                        }
+                      >
+                        {rental.status === 'Active' && (
                           <span className="flex items-center gap-1">
                             <Car className="w-4 h-4" />
                             Đang thuê
                           </span>
                         )}
-                        {rental.status === "Confirmed" && (
+                        {rental.status === 'Confirmed' && (
                           <span className="flex items-center gap-1">
                             <CheckCircle className="w-4 h-4" />
                             Đã xác nhận
                           </span>
                         )}
-                        {rental.status === "Pending" && (
+                        {rental.status === 'Pending' && (
                           <span className="flex items-center gap-1">
                             <Timer className="w-4 h-4" />
                             Chờ thanh toán
                           </span>
                         )}
-                        {!["Active", "Confirmed", "Pending"].includes(rental.status) && (
+                        {!['Active', 'Confirmed', 'Pending'].includes(
+                          rental.status
+                        ) && (
                           <span className="flex items-center gap-1">
                             <FileText className="w-4 h-4" />
                             {rental.status}
@@ -498,14 +519,20 @@ export default function RenterDashboard() {
                           <Car className="w-5 h-5 text-blue-600" />
                           <div>
                             <div className="text-xs text-gray-500">Xe</div>
-                            <div className="font-medium text-sm">ID: {rental.vehicleId}</div>
+                            <div className="font-medium text-sm">
+                              ID: {rental.vehicleId}
+                            </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
                           <MapPin className="w-5 h-5 text-green-600" />
                           <div>
-                            <div className="text-xs text-gray-500">Điểm thuê</div>
-                            <div className="font-medium text-sm">Branch: {rental.branchStartId}</div>
+                            <div className="text-xs text-gray-500">
+                              Điểm thuê
+                            </div>
+                            <div className="font-medium text-sm">
+                              Branch: {rental.branchStartId}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -513,44 +540,56 @@ export default function RenterDashboard() {
                         <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
                           <Clock className="w-5 h-5 text-blue-600" />
                           <div>
-                            <div className="text-xs text-gray-500">Thời gian</div>
+                            <div className="text-xs text-gray-500">
+                              Thời gian
+                            </div>
                             <div className="font-medium text-sm">
-                              {formatTime(rental.startTime)} - {formatTime(rental.endTime || rental.startTime)}
+                              {formatTime(rental.startTime)} -{' '}
+                              {formatTime(rental.endTime || rental.startTime)}
                             </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
                           <TrendingUp className="w-5 h-5 text-green-600" />
                           <div>
-                            <div className="text-xs text-gray-500">Chi phí dự kiến</div>
-                            <div className="font-medium text-sm">{formatCurrency(rental.estimatedCost)}</div>
+                            <div className="text-xs text-gray-500">
+                              Chi phí dự kiến
+                            </div>
+                            <div className="font-medium text-sm">
+                              {formatCurrency(rental.estimatedCost)}
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex gap-3">
-                      <Link href={`/dashboard/rental/${rental.rentalId}`} className="flex-1">
+                      <Link
+                        href={`/dashboard/rental/${rental.rentalId}`}
+                        className="flex-1"
+                      >
                         <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2">
-                          {rental.status === "Pending" && (
+                          {rental.status === 'Pending' && (
                             <>
                               <CreditCard className="w-4 h-4" />
                               Thanh toán cọc
                             </>
                           )}
-                          {rental.status === "Confirmed" && (
+                          {rental.status === 'Confirmed' && (
                             <>
                               <Key className="w-4 h-4" />
                               Tiếp tục luồng
                             </>
                           )}
-                          {rental.status === "Active" && (
+                          {rental.status === 'Active' && (
                             <>
                               <MapPin className="w-4 h-4" />
                               Xem chi tiết
                             </>
                           )}
-                          {!["Pending", "Confirmed", "Active"].includes(rental.status) && (
+                          {!['Pending', 'Confirmed', 'Active'].includes(
+                            rental.status
+                          ) && (
                             <>
                               <FileText className="w-4 h-4" />
                               Xem chi tiết
@@ -558,16 +597,17 @@ export default function RenterDashboard() {
                           )}
                         </Button>
                       </Link>
-                      {rental.status !== "Active" && rental.status !== "Completed" && (
-                        <Button
-                          variant="outline"
-                          className="flex-1 border-red-200 hover:bg-red-50 hover:border-red-300 text-red-600 flex items-center justify-center gap-2"
-                          onClick={() => handleCancelRental(rental.rentalId)}
-                        >
-                          <XCircle className="w-4 h-4" />
-                          Hủy đơn
-                        </Button>
-                      )}
+                      {rental.status !== 'Active' &&
+                        rental.status !== 'Completed' && (
+                          <Button
+                            variant="outline"
+                            className="flex-1 border-red-200 hover:bg-red-50 hover:border-red-300 text-red-600 flex items-center justify-center gap-2"
+                            onClick={() => handleCancelRental(rental.rentalId)}
+                          >
+                            <XCircle className="w-4 h-4" />
+                            Hủy đơn
+                          </Button>
+                        )}
                     </div>
                   </CardContent>
                 </Card>

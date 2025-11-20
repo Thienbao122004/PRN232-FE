@@ -1,10 +1,45 @@
 import { API_CONFIG } from "@/lib/api-config";
-import { authToken } from "@/lib/auth";
+import { getAuthHeaders } from "@/lib/auth";
 import type { ApiResponse } from "@/types/api";
 
-const FLEET_SERVICE_URL = API_CONFIG.FLEET_SERVICE_URL;
+const GATEWAY_URL = API_CONFIG.GATEWAY_URL;
 
 // ==================== TYPES ====================
+export interface Branch {
+  branchId: string;
+  branchName: string;
+  address: string;
+  city?: string;
+  latitude: number;
+  longitude: number;
+  contactNumber?: string;
+  workingHours?: string;
+  status: string;
+  totalVehicles: number;
+  availableVehicles: number;
+}
+
+export interface BranchCreateRequest {
+  branchName: string;
+  address: string;
+  city?: string;
+  latitude: number;
+  longitude: number;
+  contactNumber?: string;
+  workingHours?: string;
+}
+
+export interface BranchUpdateRequest {
+  branchName?: string;
+  address?: string;
+  city?: string;
+  latitude?: number;
+  longitude?: number;
+  contactNumber?: string;
+  workingHours?: string;
+  status?: string;
+}
+
 export interface BranchResponse {
   branchId: string;
   branchName: string;
@@ -14,7 +49,6 @@ export interface BranchResponse {
   longitude: number;
   contactNumber: string;
   workingHours: string;
-  // Thêm các field tính toán
   availableVehicles?: number;
   distance?: string;
 }
@@ -22,61 +56,76 @@ export interface BranchResponse {
 // ==================== SERVICE ====================
 export const branchService = {
   // Lấy tất cả chi nhánh
-  async getAllBranches(): Promise<ApiResponse<BranchResponse[]>> {
-    const token = authToken.get();
-    const response = await fetch(`${FLEET_SERVICE_URL}/api/fleet/Branch`, {
+  async getAllBranches(): Promise<Branch[]> {
+    const response = await fetch(`${GATEWAY_URL}/api/fleet/Branch`, {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: getAuthHeaders(),
     });
 
     if (!response.ok) {
       throw new Error("Không thể lấy danh sách chi nhánh");
     }
 
-    const result = await response.json();
-    
-    // Fleet Service trả về array trực tiếp, cần wrap thành ApiResponse format
-    if (Array.isArray(result)) {
-      return {
-        success: true,
-        message: "Success",
-        data: result
-      };
-    }
-
-    return result;
+    return await response.json();
   },
 
   // Lấy chi tiết chi nhánh theo ID
-  async getBranchById(branchId: string): Promise<ApiResponse<BranchResponse>> {
-    const token = authToken.get();
-    const response = await fetch(`${FLEET_SERVICE_URL}/api/fleet/Branch/${branchId}`, {
+  async getBranchById(branchId: string): Promise<Branch> {
+    const response = await fetch(`${GATEWAY_URL}/api/fleet/Branch/${branchId}`, {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: getAuthHeaders(),
     });
 
     if (!response.ok) {
       throw new Error("Không thể lấy thông tin chi nhánh");
     }
 
-    const result = await response.json();
-    
-    // Wrap nếu cần
-    if (!result.success) {
-      return {
-        success: true,
-        message: "Success",
-        data: result
-      };
+    return await response.json();
+  },
+
+  // Tạo chi nhánh mới
+  async createBranch(data: BranchCreateRequest): Promise<Branch> {
+    const response = await fetch(`${GATEWAY_URL}/api/fleet/Branch`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Không thể tạo chi nhánh");
     }
 
-    return result;
+    return await response.json();
+  },
+
+  // Cập nhật chi nhánh
+  async updateBranch(branchId: string, data: BranchUpdateRequest): Promise<Branch> {
+    const response = await fetch(`${GATEWAY_URL}/api/fleet/Branch/${branchId}`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Không thể cập nhật chi nhánh");
+    }
+
+    return await response.json();
+  },
+
+  // Xóa chi nhánh
+  async deleteBranch(branchId: string): Promise<void> {
+    const response = await fetch(`${GATEWAY_URL}/api/fleet/Branch/${branchId}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Không thể xóa chi nhánh");
+    }
   },
 };
 

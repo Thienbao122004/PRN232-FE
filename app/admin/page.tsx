@@ -158,7 +158,7 @@ export default function AdminDashboard() {
                       Quản lý xe
                     </Button>
                   </Link>
-                  <Link href="/admin/stations">
+                  <Link href="/admin/branches">
                     <Button variant="ghost" className="w-full justify-start">
                       <MapPin className="w-4 h-4 mr-2" />
                       Điểm thuê

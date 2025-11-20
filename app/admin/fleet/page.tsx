@@ -1,426 +1,690 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
-  Zap,
-  Car,
-  MapPin,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  fleetService,
+  type Vehicle,
+  type VehicleCreateRequest,
+  type VehicleType,
+} from '@/services/fleetService'
+import {
+  AlertCircle,
   Battery,
-  AlertTriangle,
-  TrendingUp,
-  ArrowRight,
-  Search,
-  Filter,
+  Car,
   CheckCircle,
-  Gauge,
-} from "lucide-react"
-import Link from "next/link"
-import { motion } from "framer-motion"
+  Clock,
+  Edit,
+  Loader2,
+  Plus,
+  Search,
+  Trash2,
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 export default function FleetManagementPage() {
-  const [selectedStation, setSelectedStation] = useState<string>("all")
-  const [selectedStatus, setSelectedStatus] = useState<string>("all")
+  const [vehicles, setVehicles] = useState<Vehicle[]>([])
+  const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [typeFilter, setTypeFilter] = useState('all')
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null)
+  const [formData, setFormData] = useState<VehicleCreateRequest>({
+    plateNumber: '',
+    chassisNumber: '',
+    batteryCapacity: 100,
+    typeId: '',
+    manufactureYear: new Date().getFullYear(),
+    color: '',
+    qrCode: '',
+  })
 
-  const stations = [
-    {
-      id: "1",
-      name: "Quận 1",
-      total: 25,
-      available: 12,
-      rented: 8,
-      charging: 3,
-      maintenance: 2,
-      demand: 92,
-    },
-    {
-      id: "2",
-      name: "Quận 3",
-      total: 20,
-      available: 8,
-      rented: 10,
-      charging: 1,
-      maintenance: 1,
-      demand: 95,
-    },
-    {
-      id: "3",
-      name: "Quận 7",
-      total: 22,
-      available: 15,
-      rented: 5,
-      charging: 2,
-      maintenance: 0,
-      demand: 68,
-    },
-    {
-      id: "4",
-      name: "Quận 2",
-      total: 18,
-      available: 6,
-      rented: 9,
-      charging: 2,
-      maintenance: 1,
-      demand: 88,
-    },
-  ]
+  useEffect(() => {
+    loadData()
+  }, [])
 
-  const vehicles = [
-    {
-      id: "VH-001",
-      name: "VinFast VF e34",
-      plate: "51A-12345",
-      station: "Quận 1",
-      battery: 95,
-      mileage: 12450,
-      status: "available",
-    },
-    {
-      id: "VH-002",
-      name: "VinFast VF 8",
-      plate: "51B-67890",
-      station: "Quận 3",
-      battery: 45,
-      mileage: 8920,
-      status: "charging",
-    },
-    {
-      id: "VH-003",
-      name: "VinFast VF 5",
-      plate: "51C-11111",
-      station: "Quận 7",
-      battery: 0,
-      mileage: 15680,
-      status: "rented",
-    },
-    {
-      id: "VH-004",
-      name: "VinFast VF e34",
-      plate: "51D-22222",
-      station: "Quận 2",
-      battery: 30,
-      mileage: 18200,
-      status: "maintenance",
-    },
-  ]
-
-  const transferSuggestions = [
-    {
-      from: "Quận 7",
-      to: "Quận 3",
-      vehicles: 3,
-      reason: "Nhu cầu cao tại Quận 3 (95%)",
-      priority: "high",
-    },
-    {
-      from: "Quận 7",
-      to: "Quận 2",
-      vehicles: 2,
-      reason: "Cân bằng đội xe",
-      priority: "medium",
-    },
-  ]
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "available":
-        return <Badge className="bg-green-50 text-green-700 border-green-200">Sẵn sàng</Badge>
-      case "rented":
-        return <Badge className="bg-blue-50 text-blue-700 border-blue-200">Đang thuê</Badge>
-      case "charging":
-        return <Badge className="bg-yellow-50 text-yellow-700 border-yellow-200">Đang sạc</Badge>
-      case "maintenance":
-        return <Badge className="bg-red-50 text-red-700 border-red-200">Bảo trì</Badge>
-      default:
-        return <Badge>Không rõ</Badge>
+  const loadData = async () => {
+    try {
+      setLoading(true)
+      const [vehiclesData, typesData] = await Promise.all([
+        fleetService.getAllVehicles(),
+        fleetService.getAllVehicleTypes(),
+      ])
+      setVehicles(vehiclesData)
+      setVehicleTypes(typesData)
+    } catch (error) {
+      toast.error('Không thể tải dữ liệu')
+      console.error(error)
+    } finally {
+      setLoading(false)
     }
   }
 
-  const getDemandBadge = (demand: number) => {
-    if (demand >= 90)
-      return <Badge className="bg-red-50 text-red-700 border-red-200">Rất cao</Badge>
-    if (demand >= 75)
-      return <Badge className="bg-orange-50 text-orange-700 border-orange-200">Cao</Badge>
-    if (demand >= 50)
-      return <Badge className="bg-yellow-50 text-yellow-700 border-yellow-200">Trung bình</Badge>
-    return <Badge className="bg-green-50 text-green-700 border-green-200">Thấp</Badge>
+  const handleCreate = async () => {
+    try {
+      await fleetService.createVehicle(formData)
+      toast.success('Tạo xe thành công!')
+      setIsCreateDialogOpen(false)
+      resetForm()
+      loadData()
+    } catch (error: any) {
+      toast.error(error.message || 'Không thể tạo xe')
+    }
+  }
+
+  const handleUpdate = async () => {
+    if (!selectedVehicle) return
+
+    try {
+      await fleetService.updateVehicle(selectedVehicle.vehicleId, formData)
+      toast.success('Cập nhật xe thành công!')
+      setIsEditDialogOpen(false)
+      resetForm()
+      loadData()
+    } catch (error: any) {
+      toast.error(error.message || 'Không thể cập nhật xe')
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Bạn có chắc muốn xóa xe này?')) return
+
+    try {
+      await fleetService.deleteVehicle(id)
+      toast.success('Xóa xe thành công!')
+      loadData()
+    } catch (error: any) {
+      toast.error(error.message || 'Không thể xóa xe')
+    }
+  }
+
+  const openEditDialog = (vehicle: Vehicle) => {
+    setSelectedVehicle(vehicle)
+    setFormData({
+      plateNumber: vehicle.plateNumber,
+      chassisNumber: vehicle.chassisNumber || '',
+      batteryCapacity: vehicle.batteryCapacity,
+      typeId: vehicle.typeId,
+      manufactureYear: vehicle.manufactureYear,
+      color: vehicle.color || '',
+      qrCode: vehicle.qrCode || '',
+    })
+    setIsEditDialogOpen(true)
+  }
+
+  const resetForm = () => {
+    setFormData({
+      plateNumber: '',
+      chassisNumber: '',
+      batteryCapacity: 100,
+      typeId: '',
+      manufactureYear: new Date().getFullYear(),
+      color: '',
+      qrCode: '',
+    })
+    setSelectedVehicle(null)
+  }
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig: Record<
+      string,
+      { label: string; className: string; icon: any }
+    > = {
+      Available: {
+        label: 'Sẵn sàng',
+        className: 'bg-green-500 text-white',
+        icon: CheckCircle,
+      },
+      Rented: {
+        label: 'Đang thuê',
+        className: 'bg-blue-500 text-white',
+        icon: Car,
+      },
+      Charging: {
+        label: 'Đang sạc',
+        className: 'bg-yellow-500 text-white',
+        icon: Battery,
+      },
+      Maintenance: {
+        label: 'Bảo trì',
+        className: 'bg-orange-500 text-white',
+        icon: Clock,
+      },
+      OutOfService: {
+        label: 'Ngừng hoạt động',
+        className: 'bg-red-500 text-white',
+        icon: AlertCircle,
+      },
+    }
+
+    const config = statusConfig[status] || statusConfig.Available
+    const Icon = config.icon
+
+    return (
+      <Badge className={config.className}>
+        <Icon className="w-3 h-3 mr-1" />
+        {config.label}
+      </Badge>
+    )
+  }
+
+  const filteredVehicles = vehicles.filter((vehicle) => {
+    const matchesSearch =
+      (vehicle.plateNumber || '')
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      (vehicle.typeName || '')
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      (vehicle.color || '').toLowerCase().includes(searchTerm.toLowerCase())
+
+    const matchesStatus =
+      statusFilter === 'all' || vehicle.status === statusFilter
+    
+    const matchesType =
+      typeFilter === 'all' || vehicle.typeId === typeFilter
+
+    return matchesSearch && matchesStatus && matchesType
+  })
+
+  const stats = {
+    total: vehicles.length,
+    available: vehicles.filter((v) => v.status === 'Available').length,
+    rented: vehicles.filter((v) => v.status === 'Rented').length,
+    maintenance: vehicles.filter((v) => v.status === 'Maintenance').length,
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-green-50">
-      {/* Navigation */}
-      <nav className="bg-white/95 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/admin" className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-green-500 rounded-xl flex items-center justify-center shadow-lg">
-              <Zap className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-              EV Station
-            </span>
-          </Link>
-          <Link href="/admin">
-            <Button variant="ghost">Quay lại Dashboard</Button>
-          </Link>
-        </div>
-      </nav>
-
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8"
-        >
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-            Quản lý đội xe & Điều phối
-          </h1>
-          <p className="text-gray-600 text-lg">Giám sát và điều chỉnh phân bổ xe giữa các điểm</p>
-        </motion.div>
-
-        {/* Station Overview */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.5 }}
-        >
-          <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-md mb-6">
-            <CardHeader>
-              <CardTitle>Tổng quan theo điểm thuê</CardTitle>
-              <CardDescription>Phân bổ xe và nhu cầu tại từng điểm</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {stations.map((station, index) => (
-                  <motion.div
-                    key={station.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.1, duration: 0.3 }}
-                  >
-                    <Card className="border-2 hover:border-blue-300 transition-all cursor-pointer">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <MapPin className="w-5 h-5 text-blue-600" />
-                            <span className="font-bold text-gray-900">{station.name}</span>
-                          </div>
-                          {getDemandBadge(station.demand)}
-                        </div>
-
-                        <div className="space-y-2 mb-4">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-600">Tổng xe</span>
-                            <span className="font-bold">{station.total}</span>
-                          </div>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-600">Sẵn sàng</span>
-                            <span className="font-bold text-green-600">{station.available}</span>
-                          </div>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-600">Đang thuê</span>
-                            <span className="font-bold text-blue-600">{station.rented}</span>
-                          </div>
-                        </div>
-
-                        <div className="pt-3 border-t">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-600">Nhu cầu</span>
-                            <span className="font-bold text-orange-600">{station.demand}%</span>
-                          </div>
-                          <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full transition-all ${
-                                station.demand >= 90
-                                  ? "bg-gradient-to-r from-red-500 to-orange-500"
-                                  : station.demand >= 75
-                                    ? "bg-gradient-to-r from-orange-500 to-yellow-500"
-                                    : "bg-gradient-to-r from-blue-500 to-green-500"
-                              }`}
-                              style={{ width: `${station.demand}%` }}
-                            />
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Transfer Suggestions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-        >
-          <Card className="border-0 shadow-xl bg-gradient-to-br from-purple-500 to-blue-500 text-white mb-6">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-6 h-6" />
-                <div>
-                  <CardTitle className="text-white">Đề xuất điều phối từ AI</CardTitle>
-                  <CardDescription className="text-blue-100">
-                    Dựa trên phân tích nhu cầu và tồn kho
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {transferSuggestions.map((suggestion, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 + index * 0.1, duration: 0.3 }}
-                  className="p-4 bg-white/20 backdrop-blur-md rounded-xl border border-white/30"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2 text-lg font-bold">
-                        <MapPin className="w-5 h-5" />
-                        {suggestion.from}
-                        <ArrowRight className="w-5 h-5" />
-                        <MapPin className="w-5 h-5" />
-                        {suggestion.to}
-                      </div>
-                    </div>
-                    <Badge
-                      className={
-                        suggestion.priority === "high"
-                          ? "bg-red-500 text-white border-0"
-                          : "bg-yellow-500 text-white border-0"
-                      }
-                    >
-                      {suggestion.priority === "high" ? "Ưu tiên cao" : "Ưu tiên TB"}
-                    </Badge>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-blue-100 text-sm mb-1">{suggestion.reason}</div>
-                      <div className="text-white font-semibold">Đề xuất: {suggestion.vehicles} xe</div>
-                    </div>
-                    <Button className="bg-white text-blue-600 hover:bg-blue-50">
-                      <CheckCircle className="mr-2 w-4 h-4" />
-                      Thực hiện
-                    </Button>
-                  </div>
-                </motion.div>
-              ))}
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Vehicle List */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
-        >
-          <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-md">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Danh sách xe</CardTitle>
-                  <CardDescription>Tất cả xe trong hệ thống</CardDescription>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Select value={selectedStation} onValueChange={setSelectedStation}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue placeholder="Điểm thuê" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tất cả điểm</SelectItem>
-                      {stations.map((s) => (
-                        <SelectItem key={s.id} value={s.name}>
-                          {s.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue placeholder="Trạng thái" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tất cả</SelectItem>
-                      <SelectItem value="available">Sẵn sàng</SelectItem>
-                      <SelectItem value="rented">Đang thuê</SelectItem>
-                      <SelectItem value="charging">Đang sạc</SelectItem>
-                      <SelectItem value="maintenance">Bảo trì</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {vehicles.map((vehicle, index) => (
-                <motion.div
-                  key={vehicle.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 + index * 0.05, duration: 0.3 }}
-                >
-                  <Card className="border hover:shadow-lg transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4 flex-1">
-                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center">
-                            <Car className="w-6 h-6 text-white" />
-                          </div>
-
-                          <div className="flex-1">
-                            <div className="font-bold text-gray-900">{vehicle.name}</div>
-                            <div className="text-sm text-gray-600">{vehicle.plate}</div>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <MapPin className="w-4 h-4 text-gray-400" />
-                            <span className="text-sm font-medium text-gray-700">{vehicle.station}</span>
-                          </div>
-
-                          <div className="flex items-center gap-4">
-                            <div className="text-center">
-                              <div className="flex items-center gap-1 text-sm text-gray-600 mb-1">
-                                <Battery className="w-4 h-4" />
-                                <span>Pin</span>
-                              </div>
-                              <div className="font-bold text-green-600">{vehicle.battery}%</div>
-                            </div>
-
-                            <div className="text-center">
-                              <div className="flex items-center gap-1 text-sm text-gray-600 mb-1">
-                                <Gauge className="w-4 h-4" />
-                                <span>Km</span>
-                              </div>
-                              <div className="font-bold text-blue-600">{vehicle.mileage.toLocaleString()}</div>
-                            </div>
-                          </div>
-
-                          {getStatusBadge(vehicle.status)}
-                        </div>
-
-                        <Button variant="outline" size="sm" className="ml-4">
-                          Điều phối
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </CardContent>
-          </Card>
-        </motion.div>
+    <div className="container mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold">Quản Lý Đội Xe</h1>
+        <p className="text-muted-foreground mt-1">
+          Quản lý toàn bộ đội xe trong hệ thống
+        </p>
       </div>
+
+      {/* Stats */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Tổng Số Xe
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.total}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Sẵn Sàng
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {stats.available}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Đang Thuê
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">
+              {stats.rented}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Bảo Trì
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">
+              {stats.maintenance}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters & Actions */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Danh Sách Xe</CardTitle>
+            <Button onClick={() => setIsCreateDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Thêm Xe Mới
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Tìm kiếm theo biển số, loại xe, màu sắc..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Lọc theo loại xe" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả loại xe</SelectItem>
+                {vehicleTypes.map((type) => (
+                  <SelectItem key={type.typeId} value={type.typeId}>
+                    {type.typeName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Lọc theo trạng thái" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
+                <SelectItem value="Available">Sẵn sàng</SelectItem>
+                <SelectItem value="Rented">Đang thuê</SelectItem>
+                <SelectItem value="Charging">Đang sạc</SelectItem>
+                <SelectItem value="Maintenance">Bảo trì</SelectItem>
+                <SelectItem value="OutOfService">Ngừng hoạt động</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Biển Số</TableHead>
+                    <TableHead>Loại Xe</TableHead>
+                    <TableHead>Số Khung</TableHead>
+                    <TableHead>Năm SX</TableHead>
+                    <TableHead>Màu</TableHead>
+                    <TableHead>Pin (kWh)</TableHead>
+                    <TableHead>Trạng Thái</TableHead>
+                    <TableHead className="text-right">Thao Tác</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredVehicles.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={8}
+                        className="text-center py-8 text-muted-foreground"
+                      >
+                        Không tìm thấy xe nào
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredVehicles.map((vehicle) => (
+                      <TableRow key={vehicle.vehicleId}>
+                        <TableCell className="font-medium">
+                          {vehicle.plateNumber}
+                        </TableCell>
+                        <TableCell>{vehicle.typeName || 'N/A'}</TableCell>
+                        <TableCell>{vehicle.chassisNumber || 'N/A'}</TableCell>
+                        <TableCell>{vehicle.manufactureYear}</TableCell>
+                        <TableCell>{vehicle.color || 'N/A'}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Battery className="h-4 w-4 text-green-600" />
+                            {vehicle.batteryCapacity} kWh
+                          </div>
+                        </TableCell>
+                        <TableCell>{getStatusBadge(vehicle.status)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEditDialog(vehicle)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDelete(vehicle.vehicleId)}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-600" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Create Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Thêm Xe Mới</DialogTitle>
+            <DialogDescription>
+              Nhập thông tin chi tiết của xe
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="plateNumber">Biển Số *</Label>
+                <Input
+                  id="plateNumber"
+                  value={formData.plateNumber}
+                  onChange={(e) =>
+                    setFormData({ ...formData, plateNumber: e.target.value })
+                  }
+                  placeholder="29A-12345"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="typeId">Loại Xe *</Label>
+                <Select
+                  value={formData.typeId}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, typeId: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn loại xe" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vehicleTypes.map((type) => (
+                      <SelectItem key={type.typeId} value={type.typeId}>
+                        {type.typeName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="chassisNumber">Số Khung</Label>
+                <Input
+                  id="chassisNumber"
+                  value={formData.chassisNumber}
+                  onChange={(e) =>
+                    setFormData({ ...formData, chassisNumber: e.target.value })
+                  }
+                  placeholder="VF8ABC123456"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="manufactureYear">Năm Sản Xuất *</Label>
+                <Input
+                  id="manufactureYear"
+                  type="number"
+                  value={formData.manufactureYear}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      manufactureYear: parseInt(e.target.value),
+                    })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="color">Màu Sắc</Label>
+                <Input
+                  id="color"
+                  value={formData.color}
+                  onChange={(e) =>
+                    setFormData({ ...formData, color: e.target.value })
+                  }
+                  placeholder="Trắng"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="batteryCapacity">Dung Lượng Pin (kWh) *</Label>
+                <Input
+                  id="batteryCapacity"
+                  type="number"
+                  value={formData.batteryCapacity}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      batteryCapacity: parseFloat(e.target.value),
+                    })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="qrCode">Mã QR</Label>
+              <Input
+                id="qrCode"
+                value={formData.qrCode}
+                onChange={(e) =>
+                  setFormData({ ...formData, qrCode: e.target.value })
+                }
+                placeholder="QR-VEH-001"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsCreateDialogOpen(false)
+                resetForm()
+              }}
+            >
+              Hủy
+            </Button>
+            <Button onClick={handleCreate}>Tạo Xe</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Chỉnh Sửa Xe</DialogTitle>
+            <DialogDescription>
+              Cập nhật thông tin xe {selectedVehicle?.plateNumber}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-plateNumber">Biển Số *</Label>
+                <Input
+                  id="edit-plateNumber"
+                  value={formData.plateNumber}
+                  onChange={(e) =>
+                    setFormData({ ...formData, plateNumber: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-typeId">Loại Xe *</Label>
+                <Select
+                  value={formData.typeId}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, typeId: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vehicleTypes.map((type) => (
+                      <SelectItem key={type.typeId} value={type.typeId}>
+                        {type.typeName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-chassisNumber">Số Khung</Label>
+                <Input
+                  id="edit-chassisNumber"
+                  value={formData.chassisNumber}
+                  onChange={(e) =>
+                    setFormData({ ...formData, chassisNumber: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-manufactureYear">Năm Sản Xuất *</Label>
+                <Input
+                  id="edit-manufactureYear"
+                  type="number"
+                  value={formData.manufactureYear}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      manufactureYear: parseInt(e.target.value),
+                    })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-color">Màu Sắc</Label>
+                <Input
+                  id="edit-color"
+                  value={formData.color}
+                  onChange={(e) =>
+                    setFormData({ ...formData, color: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-color">Màu Sắc *</Label>
+                <Input
+                  id="edit-color"
+                  value={formData.color}
+                  onChange={(e) =>
+                    setFormData({ ...formData, color: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-batteryCapacity">
+                  Dung Lượng Pin (kWh) *
+                </Label>
+                <Input
+                  id="edit-batteryCapacity"
+                  type="number"
+                  value={formData.batteryCapacity}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      batteryCapacity: parseFloat(e.target.value),
+                    })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-qrCode">Mã QR</Label>
+              <Input
+                id="edit-qrCode"
+                value={formData.qrCode}
+                onChange={(e) =>
+                  setFormData({ ...formData, qrCode: e.target.value })
+                }
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsEditDialogOpen(false)
+                resetForm()
+              }}
+            >
+              Hủy
+            </Button>
+            <Button onClick={handleUpdate}>Cập Nhật</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
-
