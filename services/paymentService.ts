@@ -30,7 +30,7 @@ export const paymentService = {
     data: CreatePaymentRequest
   ): Promise<ApiResponse<PaymentResponse>> {
     const token = authToken.get();
-    const response = await fetch(`${PAYMENT_SERVICE_URL}/api/payments`, {
+    const response = await fetch(`${PAYMENT_SERVICE_URL}/api/rental/payments`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -65,7 +65,7 @@ export const paymentService = {
     if (params?.endDate) queryParams.append("endDate", params.endDate);
 
     const response = await fetch(
-      `${PAYMENT_SERVICE_URL}/api/payments?${queryParams}`,
+      `${PAYMENT_SERVICE_URL}/api/rental/payments?${queryParams}`,
       {
         method: "GET",
         headers: {
@@ -88,7 +88,7 @@ export const paymentService = {
   async getPaymentById(paymentId: string): Promise<ApiResponse<PaymentResponse>> {
     const token = authToken.get();
     const response = await fetch(
-      `${PAYMENT_SERVICE_URL}/api/payments/${paymentId}`,
+      `${PAYMENT_SERVICE_URL}/api/rental/payments/${paymentId}`,
       {
         method: "GET",
         headers: {
@@ -122,7 +122,7 @@ export const paymentService = {
     if (params?.pageSize) queryParams.append("pageSize", params.pageSize.toString());
 
     const response = await fetch(
-      `${PAYMENT_SERVICE_URL}/api/payments/rental/${rentalId}?${queryParams}`,
+      `${PAYMENT_SERVICE_URL}/api/rental/payments/rental/${rentalId}?${queryParams}`,
       {
         method: "GET",
         headers: {
@@ -162,7 +162,7 @@ export const paymentService = {
     if (params?.endDate) queryParams.append("endDate", params.endDate);
 
     const response = await fetch(
-      `${PAYMENT_SERVICE_URL}/api/payments/renter/${renterId}?${queryParams}`,
+      `${PAYMENT_SERVICE_URL}/api/rental/payments/renter/${renterId}?${queryParams}`,
       {
         method: "GET",
         headers: {
@@ -176,6 +176,29 @@ export const paymentService = {
     
     if (!response.ok || !result.success) {
       throw new Error(result.message || "Không thể lấy lịch sử thanh toán");
+    }
+
+    return result;
+  },
+
+  async createVNPAYPaymentURL(data: {
+    rentalId: string;
+    amount: number;
+  }): Promise<ApiResponse<{ paymentCode: string; paymentUrl: string }>> {
+    const token = authToken.get();
+    const response = await fetch(`${PAYMENT_SERVICE_URL}/api/rental/VNPAY/payment-createURL`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || "Không thể tạo URL thanh toán VNPAY");
     }
 
     return result;

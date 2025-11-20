@@ -29,7 +29,7 @@ export const penaltyService = {
     data: CreatePenaltyRequest
   ): Promise<ApiResponse<PenaltyResponse>> {
     const token = authToken.get();
-    const response = await fetch(`${PENALTY_SERVICE_URL}/api/penalty`, {
+    const response = await fetch(`${PENALTY_SERVICE_URL}/api/rental/penalty`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -51,7 +51,7 @@ export const penaltyService = {
   async getPenaltyById(penaltyId: string): Promise<ApiResponse<PenaltyResponse>> {
     const token = authToken.get();
     const response = await fetch(
-      `${PENALTY_SERVICE_URL}/api/penalty/${penaltyId}`,
+      `${PENALTY_SERVICE_URL}/api/rental/penalty/${penaltyId}`,
       {
         method: "GET",
         headers: {
@@ -86,7 +86,7 @@ export const penaltyService = {
 
     try {
       const response = await fetch(
-        `${PENALTY_SERVICE_URL}/api/penalty/rental/${rentalId}?${queryParams}`,
+        `${PENALTY_SERVICE_URL}/api/rental/penalty/rental/${rentalId}?${queryParams}`,
         {
           method: "GET",
           headers: {

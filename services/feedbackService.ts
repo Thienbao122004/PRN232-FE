@@ -28,7 +28,7 @@ export const feedbackService = {
     data: CreateFeedbackRequest
   ): Promise<ApiResponse<FeedbackResponse>> {
     const token = authToken.get();
-    const response = await fetch(`${FEEDBACK_SERVICE_URL}/api/feedbacks`, {
+    const response = await fetch(`${FEEDBACK_SERVICE_URL}/api/rental/feedbacks`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -62,7 +62,7 @@ export const feedbackService = {
     if (params?.maxRating) queryParams.append("maxRating", params.maxRating.toString());
 
     const response = await fetch(
-      `${FEEDBACK_SERVICE_URL}/api/feedbacks?${queryParams}`,
+      `${FEEDBACK_SERVICE_URL}/api/rental/feedbacks?${queryParams}`,
       {
         method: "GET",
         headers: {
@@ -85,7 +85,7 @@ export const feedbackService = {
   async getFeedbackById(feedbackId: string): Promise<ApiResponse<FeedbackResponse>> {
     const token = authToken.get();
     const response = await fetch(
-      `${FEEDBACK_SERVICE_URL}/api/feedbacks/${feedbackId}`,
+      `${FEEDBACK_SERVICE_URL}/api/rental/feedbacks/${feedbackId}`,
       {
         method: "GET",
         headers: {
@@ -119,7 +119,7 @@ export const feedbackService = {
     if (params?.pageSize) queryParams.append("pageSize", params.pageSize.toString());
 
     const response = await fetch(
-      `${FEEDBACK_SERVICE_URL}/api/feedbacks/rental/${rentalId}?${queryParams}`,
+      `${FEEDBACK_SERVICE_URL}/api/rental/feedbacks/rental/${rentalId}?${queryParams}`,
       {
         method: "GET",
         headers: {
@@ -153,7 +153,7 @@ export const feedbackService = {
     if (params?.pageSize) queryParams.append("pageSize", params.pageSize.toString());
 
     const response = await fetch(
-      `${FEEDBACK_SERVICE_URL}/api/feedbacks/renter/${renterId}?${queryParams}`,
+      `${FEEDBACK_SERVICE_URL}/api/rental/feedbacks/renter/${renterId}?${queryParams}`,
       {
         method: "GET",
         headers: {

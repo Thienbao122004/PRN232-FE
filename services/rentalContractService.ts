@@ -35,7 +35,7 @@ export const rentalContractService = {
     data: CreateContractRequest
   ): Promise<ApiResponse<ContractResponse>> {
     const token = authToken.get();
-    const response = await fetch(`${CONTRACT_SERVICE_URL}/api/rental-contracts`, {
+    const response = await fetch(`${CONTRACT_SERVICE_URL}/api/rental/rental-contracts`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -62,7 +62,7 @@ export const rentalContractService = {
   async getContractByRentalId(rentalId: string): Promise<ApiResponse<ContractResponse>> {
     const token = authToken.get();
     const response = await fetch(
-      `${CONTRACT_SERVICE_URL}/api/rental-contracts/by-rental/${rentalId}`,
+      `${CONTRACT_SERVICE_URL}/api/rental/rental-contracts/by-rental/${rentalId}`,
       {
         method: "GET",
         headers: {
@@ -103,7 +103,7 @@ export const rentalContractService = {
     if (params?.pageSize) queryParams.append("pageSize", params.pageSize.toString());
 
     const response = await fetch(
-      `${CONTRACT_SERVICE_URL}/api/rental-contracts/search?${queryParams}`,
+      `${CONTRACT_SERVICE_URL}/api/rental/rental-contracts/search?${queryParams}`,
       {
         method: "GET",
         headers: {
@@ -135,7 +135,7 @@ export const rentalContractService = {
   ): Promise<ApiResponse<ContractResponse>> {
     const token = authToken.get();
     const response = await fetch(
-      `${CONTRACT_SERVICE_URL}/api/rental-contracts/${contractId}/signatures`,
+      `${CONTRACT_SERVICE_URL}/api/rental/rental-contracts/${contractId}/signatures`,
       {
         method: "PUT",
         headers: {

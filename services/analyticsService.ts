@@ -59,7 +59,7 @@ export const analyticsService = {
     if (params?.endDate) queryParams.append("endDate", params.endDate);
 
     const response = await fetch(
-      `${ANALYTICS_SERVICE_URL}/api/analytics/renter/${renterId}?${queryParams}`,
+      `${ANALYTICS_SERVICE_URL}/api/rental/analytics/renter/${renterId}?${queryParams}`,
       {
         method: "GET",
         headers: {
@@ -85,7 +85,7 @@ export const analyticsService = {
     const token = authToken.get();
 
     const response = await fetch(
-      `${ANALYTICS_SERVICE_URL}/api/analytics/renter/${renterId}/summary`,
+      `${ANALYTICS_SERVICE_URL}/api/rental/analytics/renter/${renterId}/summary`,
       {
         method: "GET",
         headers: {

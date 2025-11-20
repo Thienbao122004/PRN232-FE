@@ -6,7 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Zap, MapPin, Search, Filter, Battery, Users, Gauge, ChevronRight, Star, Calendar, Clock, ArrowLeft, Loader2 } from "lucide-react"
+import { DatePicker, TimePicker, ConfigProvider } from "antd"
+import locale from "antd/locale/vi_VN"
+import dayjs from "dayjs"
+import "dayjs/locale/vi"
+import * as Icons from "react-icons/lu"
+import { Zap, MapPin, Search, ArrowLeft, Loader2, Star, Battery, Gauge } from "lucide-react"
 import Link from "next/link"
 import { userService, type UserProfileResponse } from "@/services/userService"
 import { vehicleService, type VehicleResponse, type VehicleTypeResponse } from "@/services/vehicleService"
@@ -14,11 +19,16 @@ import { branchService, type BranchResponse } from "@/services/branchService"
 import { API_CONFIG } from "@/lib/api-config"
 import { useToast } from "@/hooks/use-toast"
 
+dayjs.locale("vi")
+
 // Helper để tạo full URL cho image
 const getImageUrl = (path?: string) => {
   if (!path) return "";
   if (path.startsWith("http")) return path;
   const cleanPath = path.startsWith("/") ? path.substring(1) : path;
+  if (cleanPath.startsWith("uploads")) {
+    return `${API_CONFIG.GATEWAY_URL}/userGateway/${cleanPath}`;
+  }
   return `${API_CONFIG.USER_SERVICE_URL}/${cleanPath}`;
 }
 
@@ -36,8 +46,8 @@ export default function BookingPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedStation, setSelectedStation] = useState<string | null>(null)
   const [userProfile, setUserProfile] = useState<UserProfileResponse | null>(null)
-  const [selectedDate, setSelectedDate] = useState("")
-  const [selectedTime, setSelectedTime] = useState("")
+  const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs | null>(null)
+  const [selectedTime, setSelectedTime] = useState<dayjs.Dayjs | null>(null)
   
   // API Data
   const [branches, setBranches] = useState<BranchResponse[]>([])
@@ -219,31 +229,30 @@ export default function BookingPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-sm font-semibold">Ngày thuê</Label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input 
-                        type="date" 
-                        className="pl-10"
+                  <ConfigProvider locale={locale}>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">Ngày thuê</Label>
+                      <DatePicker
                         value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)}
+                        onChange={(date) => setSelectedDate(date)}
+                        format="DD/MM/YYYY"
+                        placeholder="Chọn ngày"
+                        className="w-full h-10"
+                        disabledDate={(current) => current && current < dayjs().startOf('day')}
                       />
                     </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-sm font-semibold">Giờ thuê</Label>
-                    <div className="relative">
-                      <Clock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input 
-                        type="time" 
-                        className="pl-10"
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">Giờ thuê</Label>
+                      <TimePicker
                         value={selectedTime}
-                        onChange={(e) => setSelectedTime(e.target.value)}
+                        onChange={(time) => setSelectedTime(time)}
+                        format="HH:mm"
+                        placeholder="Chọn giờ"
+                        className="w-full h-10"
                       />
                     </div>
-                  </div>
+                  </ConfigProvider>
 
                   <Button 
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white"
@@ -398,21 +407,21 @@ export default function BookingPage() {
                                 <div className="grid grid-cols-3 gap-3 mb-4">
                                   <div className="bg-green-50 p-3 rounded-lg border border-green-200">
                                     <div className="flex items-center gap-2 mb-1">
-                                      <Battery className="w-4 h-4 text-green-600" />
+                                      <Icons.LuBattery className="w-4 h-4 text-green-600" />
                                       <p className="text-xs font-medium text-gray-700">Dung lượng pin</p>
                                     </div>
                                     <p className="text-lg font-bold text-green-600">{vehicle.batteryCapacity}%</p>
                                   </div>
                                   <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
                                     <div className="flex items-center gap-2 mb-1">
-                                      <Gauge className="w-4 h-4 text-blue-600" />
+                                      <Icons.LuGauge className="w-4 h-4 text-blue-600" />
                                       <p className="text-xs font-medium text-gray-700">Năm sản xuất</p>
                                     </div>
                                     <p className="text-lg font-bold text-blue-600">{vehicle.manufactureYear}</p>
                                   </div>
                                   <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
                                     <div className="flex items-center gap-2 mb-1">
-                                      <Star className="w-4 h-4 text-orange-600" />
+                                      <Icons.LuStar className="w-4 h-4 text-orange-600" />
                                       <p className="text-xs font-medium text-gray-700">Màu sắc</p>
                                     </div>
                                     <p className="text-lg font-bold text-orange-600">{vehicle.color}</p>
@@ -430,7 +439,7 @@ export default function BookingPage() {
 
                               <div className="flex gap-3 mt-4">
                                 <Link 
-                                  href={`/dashboard/booking/${vehicle.vehicleId}?branchId=${selectedStation}&date=${selectedDate}&time=${selectedTime}`} 
+                                  href={`/dashboard/booking/${vehicle.vehicleId}?branchId=${selectedStation}&date=${selectedDate?.format('YYYY-MM-DD') || ''}&time=${selectedTime?.format('HH:mm') || ''}`} 
                                   className="flex-1"
                                 >
                                   <Button 
@@ -438,7 +447,7 @@ export default function BookingPage() {
                                     className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white"
                                   >
                                     Đặt xe ngay
-                                    <ChevronRight className="ml-2 w-4 h-4" />
+                                    <Icons.LuChevronRight className="ml-2 w-4 h-4" />
                                   </Button>
                                 </Link>
                                 <Button variant="outline">

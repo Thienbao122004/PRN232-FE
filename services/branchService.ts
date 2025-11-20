@@ -24,7 +24,7 @@ export const branchService = {
   // Lấy tất cả chi nhánh
   async getAllBranches(): Promise<ApiResponse<BranchResponse[]>> {
     const token = authToken.get();
-    const response = await fetch(`${FLEET_SERVICE_URL}/api/Branch`, {
+    const response = await fetch(`${FLEET_SERVICE_URL}/api/fleet/Branch`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -53,7 +53,7 @@ export const branchService = {
   // Lấy chi tiết chi nhánh theo ID
   async getBranchById(branchId: string): Promise<ApiResponse<BranchResponse>> {
     const token = authToken.get();
-    const response = await fetch(`${FLEET_SERVICE_URL}/api/Branch/${branchId}`, {
+    const response = await fetch(`${FLEET_SERVICE_URL}/api/fleet/Branch/${branchId}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

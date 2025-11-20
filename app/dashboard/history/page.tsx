@@ -12,11 +12,13 @@ import { userService, type UserProfileResponse } from "@/services/userService"
 import { useToast } from "@/hooks/use-toast"
 import { API_CONFIG } from "@/lib/api-config"
 
-// Helper để tạo full URL cho image
 const getImageUrl = (path?: string) => {
   if (!path) return "";
   if (path.startsWith("http")) return path;
   const cleanPath = path.startsWith("/") ? path.substring(1) : path;
+  if (cleanPath.startsWith("uploads")) {
+    return `${API_CONFIG.GATEWAY_URL}/userGateway/${cleanPath}`;
+  }
   return `${API_CONFIG.USER_SERVICE_URL}/${cleanPath}`;
 }
 
@@ -91,9 +93,10 @@ export default function HistoryPage() {
 
       const response = await rentalOrderService.getRentalsByRenter(userId, params)
       
-      if (response.success && response.data) {
-        setRentals(response.data.data)
-        setTotalPages(response.data.totalPages)
+      if (response.success) {
+        const responseData = response as any
+        setRentals(responseData.data || [])
+        setTotalPages(responseData.totalPages || 1)
       }
     } catch (error) {
       toast({

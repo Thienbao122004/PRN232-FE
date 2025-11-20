@@ -16,7 +16,11 @@ import { API_CONFIG } from "@/lib/api-config"
 const getImageUrl = (path?: string) => {
   if (!path) return "";
   if (path.startsWith("http")) return path;
-  return `${API_CONFIG.USER_SERVICE_URL}/${path}`;
+  const cleanPath = path.startsWith("/") ? path.substring(1) : path;
+  if (cleanPath.startsWith("uploads")) {
+    return `${API_CONFIG.GATEWAY_URL}/userGateway/${cleanPath}`;
+  }
+  return `${API_CONFIG.USER_SERVICE_URL}/${cleanPath}`;
 }
 
 export default function VerificationPage() {
