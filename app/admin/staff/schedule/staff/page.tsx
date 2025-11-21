@@ -56,11 +56,12 @@ export default function StaffScheduleViewPage() {
 
   const loadBranches = async () => {
     try {
-      const response = await branchService.getAllBranches()
-      setBranches(response.data)
+      const branchesData = await branchService.getAllBranches()
+      setBranches(branchesData || [])
     } catch (error) {
       console.error('Error loading branches:', error)
       toast.error('Không thể tải danh sách chi nhánh')
+      setBranches([]) // Set empty array on error to prevent undefined
     }
   }
 
@@ -184,11 +185,17 @@ export default function StaffScheduleViewPage() {
                   <SelectValue placeholder="Chọn chi nhánh" />
                 </SelectTrigger>
                 <SelectContent>
-                  {branches.map((branch) => (
-                    <SelectItem key={branch.branchId} value={branch.branchId}>
-                      {branch.branchName}
+                  {branches && branches.length > 0 ? (
+                    branches.map((branch) => (
+                      <SelectItem key={branch.branchId} value={branch.branchId}>
+                        {branch.branchName}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-branch" disabled>
+                      Không có chi nhánh
                     </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
             </div>

@@ -1,18 +1,8 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -20,48 +10,63 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { 
-  MapPin, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Search, 
-  Loader2,
-  Phone,
-  Clock,
-  Car,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  branchService,
+  type Branch,
+  type BranchCreateRequest,
+  type BranchUpdateRequest,
+} from '@/services/branchService'
+import {
   Building2,
-} from "lucide-react"
-import { branchService, type Branch, type BranchCreateRequest, type BranchUpdateRequest } from "@/services/branchService"
-import { toast } from "sonner"
+  Car,
+  Clock,
+  Edit,
+  Loader2,
+  MapPin,
+  Phone,
+  Plus,
+  Search,
+  Trash2,
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 export default function BranchManagementPage() {
   const [branches, setBranches] = useState<Branch[]>([])
   const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null)
-  
+
   const [formData, setFormData] = useState<BranchCreateRequest>({
-    branchName: "",
-    address: "",
-    city: "",
+    branchName: '',
+    address: '',
+    city: '',
     latitude: 0,
     longitude: 0,
-    contactNumber: "",
-    workingHours: "",
+    contactNumber: '',
+    workingHours: '',
   })
 
   useEffect(() => {
@@ -74,7 +79,7 @@ export default function BranchManagementPage() {
       const data = await branchService.getAllBranches()
       setBranches(data)
     } catch (error) {
-      toast.error("Không thể tải danh sách chi nhánh")
+      toast.error('Không thể tải danh sách chi nhánh')
       console.error(error)
     } finally {
       setLoading(false)
@@ -84,18 +89,18 @@ export default function BranchManagementPage() {
   const handleCreate = async () => {
     try {
       await branchService.createBranch(formData)
-      toast.success("Tạo chi nhánh thành công")
+      toast.success('Tạo chi nhánh thành công')
       setIsCreateDialogOpen(false)
       resetForm()
       loadBranches()
     } catch (error: any) {
-      toast.error(error.message || "Không thể tạo chi nhánh")
+      toast.error(error.message || 'Không thể tạo chi nhánh')
     }
   }
 
   const handleUpdate = async () => {
     if (!selectedBranch) return
-    
+
     try {
       const updateData: BranchUpdateRequest = {
         branchName: formData.branchName,
@@ -106,26 +111,26 @@ export default function BranchManagementPage() {
         contactNumber: formData.contactNumber,
         workingHours: formData.workingHours,
       }
-      
+
       await branchService.updateBranch(selectedBranch.branchId, updateData)
-      toast.success("Cập nhật chi nhánh thành công")
+      toast.success('Cập nhật chi nhánh thành công')
       setIsEditDialogOpen(false)
       resetForm()
       loadBranches()
     } catch (error: any) {
-      toast.error(error.message || "Không thể cập nhật chi nhánh")
+      toast.error(error.message || 'Không thể cập nhật chi nhánh')
     }
   }
 
   const handleDelete = async (branchId: string) => {
-    if (!confirm("Bạn có chắc chắn muốn xóa chi nhánh này?")) return
-    
+    if (!confirm('Bạn có chắc chắn muốn xóa chi nhánh này?')) return
+
     try {
       await branchService.deleteBranch(branchId)
-      toast.success("Xóa chi nhánh thành công")
+      toast.success('Xóa chi nhánh thành công')
       loadBranches()
     } catch (error: any) {
-      toast.error(error.message || "Không thể xóa chi nhánh")
+      toast.error(error.message || 'Không thể xóa chi nhánh')
     }
   }
 
@@ -145,44 +150,59 @@ export default function BranchManagementPage() {
 
   const resetForm = () => {
     setFormData({
-      branchName: "",
-      address: "",
-      city: "",
+      branchName: '',
+      address: '',
+      city: '',
       latitude: 0,
       longitude: 0,
-      contactNumber: "",
-      workingHours: "",
+      contactNumber: '',
+      workingHours: '',
     })
     setSelectedBranch(null)
   }
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", label: string }> = {
-      Active: { variant: "default", label: "Hoạt động" },
-      Inactive: { variant: "secondary", label: "Ngừng hoạt động" },
-      Maintenance: { variant: "outline", label: "Bảo trì" },
+    const variants: Record<
+      string,
+      {
+        variant: 'default' | 'secondary' | 'destructive' | 'outline'
+        label: string
+      }
+    > = {
+      Active: { variant: 'default', label: 'Hoạt động' },
+      Inactive: { variant: 'secondary', label: 'Ngừng hoạt động' },
+      Maintenance: { variant: 'outline', label: 'Bảo trì' },
     }
-    
-    const config = variants[status] || { variant: "outline" as const, label: status }
+
+    const config = variants[status] || {
+      variant: 'outline' as const,
+      label: status,
+    }
     return <Badge variant={config.variant}>{config.label}</Badge>
   }
 
-  const filteredBranches = branches.filter(branch => {
-    const matchesSearch = 
-      (branch.branchName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const filteredBranches = branches.filter((branch) => {
+    const matchesSearch =
+      (branch.branchName || '')
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
       (branch.address || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (branch.city || '').toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchesStatus = statusFilter === "all" || branch.status === statusFilter
-    
+
+    const matchesStatus =
+      statusFilter === 'all' || branch.status === statusFilter
+
     return matchesSearch && matchesStatus
   })
 
   const stats = {
     total: branches.length,
-    active: branches.filter(b => b.status === "Active").length,
+    active: branches.filter((b) => b.status === 'Active').length,
     totalVehicles: branches.reduce((sum, b) => sum + (b.totalVehicles || 0), 0),
-    availableVehicles: branches.reduce((sum, b) => sum + (b.availableVehicles || 0), 0),
+    availableVehicles: branches.reduce(
+      (sum, b) => sum + (b.availableVehicles || 0),
+      0
+    ),
   }
 
   return (
@@ -190,7 +210,9 @@ export default function BranchManagementPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Quản Lý Điểm Thuê</h1>
-          <p className="text-muted-foreground">Quản lý các chi nhánh và điểm thuê xe</p>
+          <p className="text-muted-foreground">
+            Quản lý các chi nhánh và điểm thuê xe
+          </p>
         </div>
       </div>
 
@@ -206,7 +228,7 @@ export default function BranchManagementPage() {
             <div className="text-2xl font-bold">{stats.total}</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -214,10 +236,12 @@ export default function BranchManagementPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.active}</div>
+            <div className="text-2xl font-bold text-green-600">
+              {stats.active}
+            </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -225,10 +249,12 @@ export default function BranchManagementPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.totalVehicles}</div>
+            <div className="text-2xl font-bold text-blue-600">
+              {stats.totalVehicles}
+            </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -236,7 +262,9 @@ export default function BranchManagementPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{stats.availableVehicles}</div>
+            <div className="text-2xl font-bold text-purple-600">
+              {stats.availableVehicles}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -298,7 +326,10 @@ export default function BranchManagementPage() {
                 <TableBody>
                   {filteredBranches.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      <TableCell
+                        colSpan={8}
+                        className="text-center py-8 text-muted-foreground"
+                      >
                         Không tìm thấy chi nhánh nào
                       </TableCell>
                     </TableRow>
@@ -324,7 +355,9 @@ export default function BranchManagementPage() {
                               <Phone className="h-4 w-4 text-muted-foreground" />
                               {branch.contactNumber}
                             </div>
-                          ) : 'N/A'}
+                          ) : (
+                            'N/A'
+                          )}
                         </TableCell>
                         <TableCell>
                           {branch.workingHours ? (
@@ -332,7 +365,9 @@ export default function BranchManagementPage() {
                               <Clock className="h-4 w-4 text-muted-foreground" />
                               {branch.workingHours}
                             </div>
-                          ) : 'N/A'}
+                          ) : (
+                            'N/A'
+                          )}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -374,11 +409,9 @@ export default function BranchManagementPage() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Thêm Chi Nhánh Mới</DialogTitle>
-            <DialogDescription>
-              Nhập thông tin chi nhánh mới
-            </DialogDescription>
+            <DialogDescription>Nhập thông tin chi nhánh mới</DialogDescription>
           </DialogHeader>
-          
+
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -386,17 +419,21 @@ export default function BranchManagementPage() {
                 <Input
                   id="branchName"
                   value={formData.branchName}
-                  onChange={(e) => setFormData({...formData, branchName: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, branchName: e.target.value })
+                  }
                   placeholder="Chi nhánh Quận 1"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="city">Thành Phố</Label>
                 <Input
                   id="city"
                   value={formData.city}
-                  onChange={(e) => setFormData({...formData, city: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, city: e.target.value })
+                  }
                   placeholder="Hồ Chí Minh"
                 />
               </div>
@@ -407,7 +444,9 @@ export default function BranchManagementPage() {
               <Input
                 id="address"
                 value={formData.address}
-                onChange={(e) => setFormData({...formData, address: e.target.value})}
+                onChange={(e) =>
+                  setFormData({ ...formData, address: e.target.value })
+                }
                 placeholder="123 Nguyễn Huệ, Quận 1"
               />
             </div>
@@ -420,11 +459,16 @@ export default function BranchManagementPage() {
                   type="number"
                   step="0.000001"
                   value={formData.latitude}
-                  onChange={(e) => setFormData({...formData, latitude: parseFloat(e.target.value)})}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      latitude: parseFloat(e.target.value),
+                    })
+                  }
                   placeholder="10.762622"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="longitude">Kinh Độ *</Label>
                 <Input
@@ -432,7 +476,12 @@ export default function BranchManagementPage() {
                   type="number"
                   step="0.000001"
                   value={formData.longitude}
-                  onChange={(e) => setFormData({...formData, longitude: parseFloat(e.target.value)})}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      longitude: parseFloat(e.target.value),
+                    })
+                  }
                   placeholder="106.660172"
                 />
               </div>
@@ -444,17 +493,21 @@ export default function BranchManagementPage() {
                 <Input
                   id="contactNumber"
                   value={formData.contactNumber}
-                  onChange={(e) => setFormData({...formData, contactNumber: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, contactNumber: e.target.value })
+                  }
                   placeholder="028 1234 5678"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="workingHours">Giờ Làm Việc</Label>
                 <Input
                   id="workingHours"
                   value={formData.workingHours}
-                  onChange={(e) => setFormData({...formData, workingHours: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, workingHours: e.target.value })
+                  }
                   placeholder="8:00 - 20:00"
                 />
               </div>
@@ -462,15 +515,16 @@ export default function BranchManagementPage() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setIsCreateDialogOpen(false)
-              resetForm()
-            }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsCreateDialogOpen(false)
+                resetForm()
+              }}
+            >
               Hủy
             </Button>
-            <Button onClick={handleCreate}>
-              Tạo Chi Nhánh
-            </Button>
+            <Button onClick={handleCreate}>Tạo Chi Nhánh</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -484,7 +538,7 @@ export default function BranchManagementPage() {
               Cập nhật thông tin chi nhánh {selectedBranch?.branchName}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -492,16 +546,20 @@ export default function BranchManagementPage() {
                 <Input
                   id="edit-branchName"
                   value={formData.branchName}
-                  onChange={(e) => setFormData({...formData, branchName: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, branchName: e.target.value })
+                  }
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="edit-city">Thành Phố</Label>
                 <Input
                   id="edit-city"
                   value={formData.city}
-                  onChange={(e) => setFormData({...formData, city: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, city: e.target.value })
+                  }
                 />
               </div>
             </div>
@@ -511,7 +569,9 @@ export default function BranchManagementPage() {
               <Input
                 id="edit-address"
                 value={formData.address}
-                onChange={(e) => setFormData({...formData, address: e.target.value})}
+                onChange={(e) =>
+                  setFormData({ ...formData, address: e.target.value })
+                }
               />
             </div>
 
@@ -523,10 +583,15 @@ export default function BranchManagementPage() {
                   type="number"
                   step="0.000001"
                   value={formData.latitude}
-                  onChange={(e) => setFormData({...formData, latitude: parseFloat(e.target.value)})}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      latitude: parseFloat(e.target.value),
+                    })
+                  }
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="edit-longitude">Kinh Độ *</Label>
                 <Input
@@ -534,7 +599,12 @@ export default function BranchManagementPage() {
                   type="number"
                   step="0.000001"
                   value={formData.longitude}
-                  onChange={(e) => setFormData({...formData, longitude: parseFloat(e.target.value)})}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      longitude: parseFloat(e.target.value),
+                    })
+                  }
                 />
               </div>
             </div>
@@ -545,31 +615,36 @@ export default function BranchManagementPage() {
                 <Input
                   id="edit-contactNumber"
                   value={formData.contactNumber}
-                  onChange={(e) => setFormData({...formData, contactNumber: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, contactNumber: e.target.value })
+                  }
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="edit-workingHours">Giờ Làm Việc</Label>
                 <Input
                   id="edit-workingHours"
                   value={formData.workingHours}
-                  onChange={(e) => setFormData({...formData, workingHours: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, workingHours: e.target.value })
+                  }
                 />
               </div>
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setIsEditDialogOpen(false)
-              resetForm()
-            }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsEditDialogOpen(false)
+                resetForm()
+              }}
+            >
               Hủy
             </Button>
-            <Button onClick={handleUpdate}>
-              Cập Nhật
-            </Button>
+            <Button onClick={handleUpdate}>Cập Nhật</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

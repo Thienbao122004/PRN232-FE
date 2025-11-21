@@ -210,9 +210,8 @@ export default function FleetManagementPage() {
 
     const matchesStatus =
       statusFilter === 'all' || vehicle.status === statusFilter
-    
-    const matchesType =
-      typeFilter === 'all' || vehicle.typeId === typeFilter
+
+    const matchesType = typeFilter === 'all' || vehicle.typeId === typeFilter
 
     return matchesSearch && matchesStatus && matchesType
   })

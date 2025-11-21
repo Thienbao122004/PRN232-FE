@@ -18,6 +18,7 @@ import {
   Car,
   Clock,
   DollarSign,
+  FileText,
   LogOut,
   MapPin,
   Settings,
@@ -168,6 +169,12 @@ export default function AdminDashboard() {
                     <Button variant="ghost" className="w-full justify-start">
                       <Users className="w-4 h-4 mr-2" />
                       Khách hàng
+                    </Button>
+                  </Link>
+                  <Link href="/admin/reports">
+                    <Button variant="ghost" className="w-full justify-start">
+                      <FileText className="w-4 h-4 mr-2" />
+                      Khiếu nại
                     </Button>
                   </Link>
                   <Link href="/admin/staff">

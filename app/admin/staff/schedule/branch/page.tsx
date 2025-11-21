@@ -12,7 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { BranchResponse } from '@/services/branchService'
 import { branchService } from '@/services/branchService'
 import { workdayService } from '@/services/workforceService'
 import type { BranchSchedule, Workday } from '@/types/workforce'
@@ -48,14 +47,12 @@ export default function BranchSchedulePage() {
 
   const loadBranches = async () => {
     try {
-      const response = await branchService.getAllBranches()
-      // Map BranchResponse to Branch interface
-      const mappedBranches: Branch[] = response.data.map(
-        (b: BranchResponse) => ({
-          branchId: b.branchId,
-          branchName: b.branchName,
-        })
-      )
+      const branchesData = await branchService.getAllBranches()
+      // Map Branch to local Branch interface
+      const mappedBranches: Branch[] = branchesData.map((b) => ({
+        branchId: b.branchId,
+        branchName: b.branchName,
+      }))
       setBranches(mappedBranches)
       if (mappedBranches.length > 0) {
         setSelectedBranch(mappedBranches[0].branchId)
@@ -63,6 +60,7 @@ export default function BranchSchedulePage() {
     } catch (error) {
       toast.error('Không thể tải danh sách chi nhánh')
       console.error(error)
+      setBranches([]) // Set empty array on error
     }
   }
 
@@ -134,11 +132,17 @@ export default function BranchSchedulePage() {
                   <SelectValue placeholder="Chọn chi nhánh" />
                 </SelectTrigger>
                 <SelectContent>
-                  {branches.map((branch) => (
-                    <SelectItem key={branch.branchId} value={branch.branchId}>
-                      {branch.branchName}
+                  {branches && branches.length > 0 ? (
+                    branches.map((branch) => (
+                      <SelectItem key={branch.branchId} value={branch.branchId}>
+                        {branch.branchName}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-branch" disabled>
+                      Không có chi nhánh
                     </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
             </div>

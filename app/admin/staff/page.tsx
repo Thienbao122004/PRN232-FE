@@ -1,200 +1,626 @@
-"use client"
+'use client'
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Zap, Users, Star, TrendingUp, MapPin, Award } from "lucide-react"
-import Link from "next/link"
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  type UserManagementResponse,
+  userManagementService,
+} from '@/services/userManagementService'
+import {
+  Lock,
+  Search,
+  Shield,
+  Unlock,
+  UserCheck,
+  UserCog,
+  Users,
+  UserX,
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
-export default function StaffManagementPage() {
-  const staff = [
-    {
-      id: "ST-001",
-      name: "Trần Văn B",
-      station: "Điểm thuê Quận 1",
-      role: "Nhân viên",
-      transactions: 156,
-      rating: 4.9,
-      performance: 95,
-      status: "active",
-    },
-    {
-      id: "ST-002",
-      name: "Nguyễn Thị C",
-      station: "Điểm thuê Quận 3",
-      role: "Trưởng điểm",
-      transactions: 142,
-      rating: 4.8,
-      performance: 92,
-      status: "active",
-    },
-    {
-      id: "ST-003",
-      name: "Lê Văn D",
-      station: "Điểm thuê Quận 7",
-      role: "Nhân viên",
-      transactions: 138,
-      rating: 4.9,
-      performance: 94,
-      status: "active",
-    },
-    {
-      id: "ST-004",
-      name: "Phạm Thị E",
-      station: "Điểm thuê Quận 2",
-      role: "Nhân viên",
-      transactions: 98,
-      rating: 4.5,
-      performance: 78,
-      status: "active",
-    },
-  ]
+export default function StaffPage() {
+  const [staff, setStaff] = useState<UserManagementResponse[]>([])
+  const [filteredStaff, setFilteredStaff] = useState<UserManagementResponse[]>(
+    []
+  )
+  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
 
-  return (
-    <div className="min-h-screen bg-surface">
-      {/* Navigation */}
-      <nav className="bg-white border-b border-border sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/admin" className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center">
-              <Zap className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-              EV Station
-            </span>
-          </Link>
-          <Link href="/admin">
-            <Button variant="ghost">Quay lại Dashboard</Button>
-          </Link>
-        </div>
-      </nav>
+  // Detail Dialog
+  const [selectedStaff, setSelectedStaff] =
+    useState<UserManagementResponse | null>(null)
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2 text-balance">Quản lý nhân viên</h1>
-          <p className="text-muted-foreground text-lg">Theo dõi hiệu suất và đánh giá nhân viên</p>
-        </div>
+  // Change Role Dialog
+  const [isChangeRoleDialogOpen, setIsChangeRoleDialogOpen] = useState(false)
+  const [newRole, setNewRole] = useState('')
 
-        <div className="space-y-6">
-          {/* Top Performers */}
-          <Card className="border-0 shadow-lg">
-            <CardHeader>
-              <CardTitle>Nhân viên xuất sắc tháng này</CardTitle>
-              <CardDescription>Top 3 nhân viên có hiệu suất cao nhất</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {staff.slice(0, 3).map((member, index) => (
-                <div key={member.id} className="flex items-center justify-between p-4 bg-surface rounded-xl">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                      {index + 1}
-                    </div>
-                    <div>
-                      <div className="font-bold">{member.name}</div>
-                      <div className="text-sm text-muted-foreground flex items-center gap-2">
-                        <MapPin className="w-3 h-3" />
-                        {member.station}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-6">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-blue-600">{member.transactions}</div>
-                      <div className="text-xs text-muted-foreground">Giao dịch</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">{member.performance}%</div>
-                      <div className="text-xs text-muted-foreground">Hiệu suất</div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                      <span className="font-bold">{member.rating}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+  // Lock Dialog
+  const [isLockDialogOpen, setIsLockDialogOpen] = useState(false)
+  const [lockReason, setLockReason] = useState('')
 
-          {/* All Staff */}
-          <Card className="border-0 shadow-lg">
-            <CardHeader>
-              <CardTitle>Danh sách nhân viên</CardTitle>
-              <CardDescription>Tất cả nhân viên trong hệ thống</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {staff.map((member) => (
-                <Card key={member.id} className="border shadow-sm">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center">
-                          <Users className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                          <div className="font-bold text-lg">{member.name}</div>
-                          <div className="text-sm text-muted-foreground">Mã: {member.id}</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge className="bg-blue-50 text-blue-700">{member.role}</Badge>
-                        <Badge className="bg-green-50 text-green-700">Đang làm việc</Badge>
-                      </div>
-                    </div>
+  // Stats
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    locked: 0,
+    managers: 0,
+  })
 
-                    <div className="grid md:grid-cols-4 gap-4 mb-4">
-                      <div className="p-3 bg-blue-50 rounded-xl">
-                        <div className="flex items-center gap-2 mb-1">
-                          <MapPin className="w-4 h-4 text-blue-600" />
-                          <span className="text-xs text-muted-foreground">Điểm làm việc</span>
-                        </div>
-                        <div className="font-medium text-sm">{member.station}</div>
-                      </div>
+  useEffect(() => {
+    loadStaff()
+  }, [])
 
-                      <div className="p-3 bg-green-50 rounded-xl">
-                        <div className="flex items-center gap-2 mb-1">
-                          <TrendingUp className="w-4 h-4 text-green-600" />
-                          <span className="text-xs text-muted-foreground">Giao dịch</span>
-                        </div>
-                        <div className="font-bold text-green-600">{member.transactions}</div>
-                      </div>
+  useEffect(() => {
+    filterStaff()
+  }, [staff, searchTerm, statusFilter])
 
-                      <div className="p-3 bg-yellow-50 rounded-xl">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Star className="w-4 h-4 text-yellow-600" />
-                          <span className="text-xs text-muted-foreground">Đánh giá</span>
-                        </div>
-                        <div className="font-bold text-yellow-600">{member.rating}/5</div>
-                      </div>
+  const loadStaff = async () => {
+    try {
+      setLoading(true)
+      const data = await userManagementService.getUsersByRole('staff')
+      setStaff(data)
+      calculateStats(data)
+    } catch (error) {
+      console.error('Error loading staff:', error)
+      toast.error('Không thể tải danh sách nhân viên')
+    } finally {
+      setLoading(false)
+    }
+  }
 
-                      <div className="p-3 bg-purple-50 rounded-xl">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Award className="w-4 h-4 text-purple-600" />
-                          <span className="text-xs text-muted-foreground">Hiệu suất</span>
-                        </div>
-                        <div className="font-bold text-purple-600">{member.performance}%</div>
-                      </div>
-                    </div>
+  const calculateStats = (data: UserManagementResponse[]) => {
+    setStats({
+      total: data.length,
+      active: data.filter((s) => s.status === 'active').length,
+      locked: data.filter((s) => s.status === 'locked').length,
+      managers: data.filter((s) => s.role === 'manager').length,
+    })
+  }
 
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="bg-transparent">
-                        Xem chi tiết
-                      </Button>
-                      <Button variant="outline" size="sm" className="bg-transparent">
-                        Lịch làm việc
-                      </Button>
-                      <Button variant="outline" size="sm" className="bg-transparent">
-                        Đánh giá
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </CardContent>
-          </Card>
+  const filterStaff = () => {
+    let filtered = staff
+
+    // Filter by status
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter((s) => s.status === statusFilter)
+    }
+
+    // Filter by search term
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase()
+      filtered = filtered.filter(
+        (s) =>
+          s.fullName.toLowerCase().includes(term) ||
+          s.email.toLowerCase().includes(term) ||
+          s.userName.toLowerCase().includes(term) ||
+          s.phoneNumber?.toLowerCase().includes(term)
+      )
+    }
+
+    setFilteredStaff(filtered)
+  }
+
+  const handleViewDetails = (staffMember: UserManagementResponse) => {
+    setSelectedStaff(staffMember)
+    setIsDetailDialogOpen(true)
+  }
+
+  const handleChangeRole = async () => {
+    if (!selectedStaff || !newRole) return
+
+    try {
+      await userManagementService.changeUserRole(selectedStaff.userId, newRole)
+      toast.success('Đã thay đổi quyền nhân viên')
+      setIsChangeRoleDialogOpen(false)
+      setNewRole('')
+      loadStaff()
+    } catch (error) {
+      console.error('Error changing role:', error)
+      toast.error('Không thể thay đổi quyền')
+    }
+  }
+
+  const handleLockStaff = async () => {
+    if (!selectedStaff) return
+
+    try {
+      await userManagementService.lockUser(selectedStaff.userId, lockReason)
+      toast.success('Đã khóa tài khoản nhân viên')
+      setIsLockDialogOpen(false)
+      setLockReason('')
+      loadStaff()
+    } catch (error) {
+      console.error('Error locking staff:', error)
+      toast.error('Không thể khóa tài khoản')
+    }
+  }
+
+  const handleUnlockStaff = async (userId: string) => {
+    try {
+      await userManagementService.unlockUser(userId)
+      toast.success('Đã mở khóa tài khoản')
+      loadStaff()
+    } catch (error) {
+      console.error('Error unlocking staff:', error)
+      toast.error('Không thể mở khóa tài khoản')
+    }
+  }
+
+  const getStatusBadge = (status: string) => {
+    const variants: Record<
+      string,
+      {
+        variant: 'default' | 'secondary' | 'destructive' | 'outline'
+        label: string
+      }
+    > = {
+      active: { variant: 'default', label: 'Hoạt động' },
+      pending: { variant: 'secondary', label: 'Chờ duyệt' },
+      locked: { variant: 'destructive', label: 'Đã khóa' },
+    }
+
+    const config = variants[status] || {
+      variant: 'outline' as const,
+      label: status,
+    }
+    return <Badge variant={config.variant}>{config.label}</Badge>
+  }
+
+  const getRoleBadge = (role: string) => {
+    const variants: Record<
+      string,
+      { className: string; icon: any; label: string }
+    > = {
+      manager: {
+        className: 'bg-purple-50 text-purple-700',
+        icon: Shield,
+        label: 'Quản lý',
+      },
+      staff: {
+        className: 'bg-blue-50 text-blue-700',
+        icon: UserCheck,
+        label: 'Nhân viên',
+      },
+    }
+
+    const config = variants[role] || {
+      className: 'bg-gray-50 text-gray-700',
+      icon: Users,
+      label: role,
+    }
+    const Icon = config.icon
+
+    return (
+      <Badge className={config.className}>
+        <Icon className="h-3 w-3 mr-1" />
+        {config.label}
+      </Badge>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+          <p>Đang tải...</p>
         </div>
       </div>
+    )
+  }
+
+  return (
+    <div className="container mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Quản Lý Nhân Viên</h1>
+          <p className="text-muted-foreground">
+            Quản lý thông tin, quyền hạn và trạng thái nhân viên
+          </p>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Tổng số</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.total}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Hoạt động</CardTitle>
+            <UserCheck className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {stats.active}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Quản lý</CardTitle>
+            <Shield className="h-4 w-4 text-purple-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-600">
+              {stats.managers}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Đã khóa</CardTitle>
+            <UserX className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              {stats.locked}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Bộ lọc</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Tìm kiếm</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Tìm theo tên, email, SĐT..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Trạng thái</Label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả</SelectItem>
+                  <SelectItem value="active">Hoạt động</SelectItem>
+                  <SelectItem value="pending">Chờ duyệt</SelectItem>
+                  <SelectItem value="locked">Đã khóa</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Danh sách nhân viên ({filteredStaff.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Họ tên</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>SĐT</TableHead>
+                <TableHead>Quyền</TableHead>
+                <TableHead>Trạng thái</TableHead>
+                <TableHead>Thao tác</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredStaff.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center">
+                    Không có nhân viên nào
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredStaff.map((staffMember) => (
+                  <TableRow key={staffMember.userId}>
+                    <TableCell className="font-medium">
+                      {staffMember.fullName}
+                    </TableCell>
+                    <TableCell>{staffMember.email}</TableCell>
+                    <TableCell>{staffMember.phoneNumber || 'N/A'}</TableCell>
+                    <TableCell>{getRoleBadge(staffMember.role)}</TableCell>
+                    <TableCell>{getStatusBadge(staffMember.status)}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleViewDetails(staffMember)}
+                        >
+                          Chi tiết
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => {
+                            setSelectedStaff(staffMember)
+                            setNewRole(staffMember.role)
+                            setIsChangeRoleDialogOpen(true)
+                          }}
+                        >
+                          <UserCog className="h-4 w-4 mr-1" />
+                          Quyền
+                        </Button>
+
+                        {staffMember.status === 'active' && (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => {
+                              setSelectedStaff(staffMember)
+                              setIsLockDialogOpen(true)
+                            }}
+                          >
+                            <Lock className="h-4 w-4 mr-1" />
+                            Khóa
+                          </Button>
+                        )}
+
+                        {staffMember.status === 'locked' && (
+                          <Button
+                            size="sm"
+                            variant="default"
+                            onClick={() =>
+                              handleUnlockStaff(staffMember.userId)
+                            }
+                          >
+                            <Unlock className="h-4 w-4 mr-1" />
+                            Mở khóa
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* Detail Dialog */}
+      <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Chi tiết nhân viên</DialogTitle>
+            <DialogDescription>
+              Thông tin chi tiết của {selectedStaff?.fullName}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedStaff && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">User ID</Label>
+                  <p className="font-medium">{selectedStaff.userId}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Trạng thái</Label>
+                  <div className="mt-1">
+                    {getStatusBadge(selectedStaff.status)}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Họ tên</Label>
+                  <p className="font-medium">{selectedStaff.fullName}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Username</Label>
+                  <p className="font-medium">{selectedStaff.userName}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Email</Label>
+                  <p className="font-medium">{selectedStaff.email}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Số điện thoại</Label>
+                  <p className="font-medium">
+                    {selectedStaff.phoneNumber || 'N/A'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Quyền</Label>
+                  <div className="mt-1">{getRoleBadge(selectedStaff.role)}</div>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Ngày sinh</Label>
+                  <p className="font-medium">{selectedStaff.dob || 'N/A'}</p>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-muted-foreground">Địa chỉ</Label>
+                <p className="font-medium">{selectedStaff.address || 'N/A'}</p>
+              </div>
+
+              {selectedStaff.avatarUrl && (
+                <div>
+                  <Label className="text-muted-foreground">Avatar</Label>
+                  <img
+                    src={selectedStaff.avatarUrl}
+                    alt="Avatar"
+                    className="mt-2 h-24 w-24 rounded-full border"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsDetailDialogOpen(false)}
+            >
+              Đóng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Change Role Dialog */}
+      <Dialog
+        open={isChangeRoleDialogOpen}
+        onOpenChange={setIsChangeRoleDialogOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Thay đổi quyền</DialogTitle>
+            <DialogDescription>
+              Thay đổi quyền hạn cho {selectedStaff?.fullName}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="newRole">Quyền mới *</Label>
+              <Select value={newRole} onValueChange={setNewRole}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn quyền" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="staff">Nhân viên</SelectItem>
+                  <SelectItem value="manager">Quản lý</SelectItem>
+                  <SelectItem value="customer">Khách hàng</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="rounded-lg bg-yellow-50 border border-yellow-200 p-3">
+              <p className="text-sm text-yellow-800">
+                ⚠️ Thay đổi quyền sẽ ảnh hưởng đến khả năng truy cập của người
+                dùng
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsChangeRoleDialogOpen(false)
+                setNewRole('')
+              }}
+            >
+              Hủy
+            </Button>
+            <Button
+              onClick={handleChangeRole}
+              disabled={!newRole || newRole === selectedStaff?.role}
+            >
+              <UserCog className="mr-2 h-4 w-4" />
+              Thay đổi quyền
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Lock Dialog */}
+      <Dialog open={isLockDialogOpen} onOpenChange={setIsLockDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Khóa tài khoản</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc muốn khóa tài khoản {selectedStaff?.fullName}?
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="lockReason">Lý do khóa *</Label>
+              <Textarea
+                id="lockReason"
+                value={lockReason}
+                onChange={(e) => setLockReason(e.target.value)}
+                placeholder="Nhập lý do khóa tài khoản..."
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsLockDialogOpen(false)
+                setLockReason('')
+              }}
+            >
+              Hủy
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleLockStaff}
+              disabled={!lockReason.trim()}
+            >
+              <Lock className="mr-2 h-4 w-4" />
+              Khóa tài khoản
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

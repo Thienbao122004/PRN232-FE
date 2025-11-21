@@ -1,349 +1,584 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Zap, Search, User, AlertTriangle, CheckCircle, Star } from "lucide-react"
-import Link from "next/link"
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  type UserManagementResponse,
+  userManagementService,
+} from '@/services/userManagementService'
+import {
+  CheckCircle,
+  Lock,
+  Search,
+  Unlock,
+  UserCheck,
+  UserX,
+  Users,
+  XCircle,
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 export default function CustomersPage() {
-  const [searchQuery, setSearchQuery] = useState("")
+  const [customers, setCustomers] = useState<UserManagementResponse[]>([])
+  const [filteredCustomers, setFilteredCustomers] = useState<
+    UserManagementResponse[]
+  >([])
+  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
 
-  const customers = [
-    {
-      id: "CUS-001",
-      name: "Nguyễn Văn A",
-      email: "nguyenvana@email.com",
-      phone: "0901234567",
-      totalRentals: 24,
-      totalSpent: 8400000,
-      status: "active",
-      rating: 4.9,
-      riskLevel: "low",
-    },
-    {
-      id: "CUS-002",
-      name: "Trần Thị B",
-      email: "tranthib@email.com",
-      phone: "0907654321",
-      totalRentals: 18,
-      totalSpent: 6300000,
-      status: "active",
-      rating: 4.8,
-      riskLevel: "low",
-    },
-    {
-      id: "CUS-003",
-      name: "Lê Văn C",
-      email: "levanc@email.com",
-      phone: "0903456789",
-      totalRentals: 5,
-      totalSpent: 1750000,
-      status: "active",
-      rating: 3.2,
-      riskLevel: "high",
-      issues: "2 lần trả xe muộn, 1 lần hư hỏng xe",
-    },
-  ]
+  // Detail Dialog
+  const [selectedCustomer, setSelectedCustomer] =
+    useState<UserManagementResponse | null>(null)
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
 
-  const complaints = [
-    {
-      id: "CP-001",
-      customer: "Phạm Văn D",
-      issue: "Xe giao không đúng pin như mô tả",
-      date: "22/01/2025",
-      status: "pending",
-      priority: "high",
-    },
-    {
-      id: "CP-002",
-      customer: "Hoàng Thị E",
-      issue: "Nhân viên thái độ không tốt",
-      date: "21/01/2025",
-      status: "resolved",
-      priority: "medium",
-    },
-  ]
+  // Lock Dialog
+  const [isLockDialogOpen, setIsLockDialogOpen] = useState(false)
+  const [lockReason, setLockReason] = useState('')
 
-  const getRiskBadge = (level: string) => {
-    switch (level) {
-      case "low":
-        return <Badge className="bg-green-50 text-green-700">Tin cậy</Badge>
-      case "medium":
-        return <Badge className="bg-yellow-50 text-yellow-700">Cảnh báo</Badge>
-      case "high":
-        return <Badge className="bg-red-50 text-red-700">Rủi ro cao</Badge>
-      default:
-        return <Badge>Không xác định</Badge>
+  // Verify Dialog
+  const [isVerifyDialogOpen, setIsVerifyDialogOpen] = useState(false)
+
+  // Stats
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    pending: 0,
+    locked: 0,
+  })
+
+  useEffect(() => {
+    loadCustomers()
+  }, [])
+
+  useEffect(() => {
+    filterCustomers()
+  }, [customers, searchTerm, statusFilter])
+
+  const loadCustomers = async () => {
+    try {
+      setLoading(true)
+      const data = await userManagementService.getUsersByRole('customer')
+      setCustomers(data)
+      calculateStats(data)
+    } catch (error) {
+      console.error('Error loading customers:', error)
+      toast.error('Không thể tải danh sách khách hàng')
+    } finally {
+      setLoading(false)
     }
   }
 
+  const calculateStats = (data: UserManagementResponse[]) => {
+    setStats({
+      total: data.length,
+      active: data.filter((c) => c.status === 'active').length,
+      pending: data.filter((c) => c.status === 'pending').length,
+      locked: data.filter((c) => c.status === 'locked').length,
+    })
+  }
+
+  const filterCustomers = () => {
+    let filtered = customers
+
+    // Filter by status
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter((c) => c.status === statusFilter)
+    }
+
+    // Filter by search term
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase()
+      filtered = filtered.filter(
+        (c) =>
+          c.fullName.toLowerCase().includes(term) ||
+          c.email.toLowerCase().includes(term) ||
+          c.userName.toLowerCase().includes(term) ||
+          c.phoneNumber?.toLowerCase().includes(term)
+      )
+    }
+
+    setFilteredCustomers(filtered)
+  }
+
+  const handleViewDetails = (customer: UserManagementResponse) => {
+    setSelectedCustomer(customer)
+    setIsDetailDialogOpen(true)
+  }
+
+  const handleLockCustomer = async () => {
+    if (!selectedCustomer) return
+
+    try {
+      await userManagementService.lockUser(selectedCustomer.userId, lockReason)
+      toast.success('Đã khóa tài khoản khách hàng')
+      setIsLockDialogOpen(false)
+      setLockReason('')
+      loadCustomers()
+    } catch (error) {
+      console.error('Error locking customer:', error)
+      toast.error('Không thể khóa tài khoản')
+    }
+  }
+
+  const handleUnlockCustomer = async (userId: string) => {
+    try {
+      await userManagementService.unlockUser(userId)
+      toast.success('Đã mở khóa tài khoản')
+      loadCustomers()
+    } catch (error) {
+      console.error('Error unlocking customer:', error)
+      toast.error('Không thể mở khóa tài khoản')
+    }
+  }
+
+  const handleVerifyCustomer = async (status: string) => {
+    if (!selectedCustomer) return
+
+    try {
+      await userManagementService.verifyUser(selectedCustomer.userId, status)
+      toast.success(
+        status === 'active' ? 'Đã phê duyệt tài khoản' : 'Đã từ chối tài khoản'
+      )
+      setIsVerifyDialogOpen(false)
+      loadCustomers()
+    } catch (error) {
+      console.error('Error verifying customer:', error)
+      toast.error('Không thể xác thực tài khoản')
+    }
+  }
+
+  const getStatusBadge = (status: string) => {
+    const variants: Record<
+      string,
+      {
+        variant: 'default' | 'secondary' | 'destructive' | 'outline'
+        label: string
+      }
+    > = {
+      active: { variant: 'default', label: 'Hoạt động' },
+      pending: { variant: 'secondary', label: 'Chờ duyệt' },
+      locked: { variant: 'destructive', label: 'Đã khóa' },
+    }
+
+    const config = variants[status] || {
+      variant: 'outline' as const,
+      label: status,
+    }
+    return <Badge variant={config.variant}>{config.label}</Badge>
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+          <p>Đang tải...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-surface">
-      {/* Navigation */}
-      <nav className="bg-white border-b border-border sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/admin" className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center">
-              <Zap className="w-6 h-6 text-white" />
+    <div className="container mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Quản Lý Khách Hàng</h1>
+          <p className="text-muted-foreground">
+            Quản lý thông tin và trạng thái khách hàng
+          </p>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Tổng số</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.total}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Hoạt động</CardTitle>
+            <UserCheck className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {stats.active}
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-              EV Station
-            </span>
-          </Link>
-          <Link href="/admin">
-            <Button variant="ghost">Quay lại Dashboard</Button>
-          </Link>
-        </div>
-      </nav>
+          </CardContent>
+        </Card>
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2 text-balance">Quản lý khách hàng</h1>
-          <p className="text-muted-foreground text-lg">Hồ sơ, lịch sử và xử lý khiếu nại</p>
-        </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Chờ duyệt</CardTitle>
+            <CheckCircle className="h-4 w-4 text-yellow-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-yellow-600">
+              {stats.pending}
+            </div>
+          </CardContent>
+        </Card>
 
-        <Tabs defaultValue="all" className="space-y-6">
-          <TabsList className="bg-white border border-border">
-            <TabsTrigger value="all">Tất cả ({customers.length})</TabsTrigger>
-            <TabsTrigger value="risk">Rủi ro cao (1)</TabsTrigger>
-            <TabsTrigger value="complaints">Khiếu nại ({complaints.length})</TabsTrigger>
-          </TabsList>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Đã khóa</CardTitle>
+            <UserX className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              {stats.locked}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-          {/* All Customers Tab */}
-          <TabsContent value="all" className="space-y-6">
-            <Card className="border-0 shadow-lg">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Danh sách khách hàng</CardTitle>
-                  <div className="relative w-64">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Tìm khách hàng..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {customers.map((customer) => (
-                  <Card key={customer.id} className="border shadow-sm">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center">
-                            <User className="w-6 h-6 text-white" />
-                          </div>
-                          <div>
-                            <div className="font-bold text-lg">{customer.name}</div>
-                            <div className="text-sm text-muted-foreground">Mã: {customer.id}</div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {getRiskBadge(customer.riskLevel)}
-                          <Badge className="bg-blue-50 text-blue-700">
-                            <Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" />
-                            {customer.rating}
-                          </Badge>
-                        </div>
-                      </div>
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Bộ lọc</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Tìm kiếm</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Tìm theo tên, email, SĐT..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
 
-                      <div className="grid md:grid-cols-4 gap-4 mb-4">
-                        <div>
-                          <div className="text-sm text-muted-foreground">Email</div>
-                          <div className="font-medium">{customer.email}</div>
-                        </div>
-                        <div>
-                          <div className="text-sm text-muted-foreground">Số điện thoại</div>
-                          <div className="font-medium">{customer.phone}</div>
-                        </div>
-                        <div>
-                          <div className="text-sm text-muted-foreground">Tổng chuyến</div>
-                          <div className="font-medium">{customer.totalRentals}</div>
-                        </div>
-                        <div>
-                          <div className="text-sm text-muted-foreground">Tổng chi tiêu</div>
-                          <div className="font-medium text-green-600">
-                            {(customer.totalSpent / 1000000).toFixed(1)}M
-                          </div>
-                        </div>
-                      </div>
+            <div className="space-y-2">
+              <Label>Trạng thái</Label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả</SelectItem>
+                  <SelectItem value="active">Hoạt động</SelectItem>
+                  <SelectItem value="pending">Chờ duyệt</SelectItem>
+                  <SelectItem value="locked">Đã khóa</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-                      {customer.issues && (
-                        <div className="p-3 bg-red-50 border border-red-200 rounded-xl mb-4">
-                          <div className="flex items-start gap-2">
-                            <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
-                            <div className="text-sm text-red-800">{customer.issues}</div>
-                          </div>
-                        </div>
-                      )}
-
+      {/* Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            Danh sách khách hàng ({filteredCustomers.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Họ tên</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>SĐT</TableHead>
+                <TableHead>Trạng thái</TableHead>
+                <TableHead>Thao tác</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredCustomers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center">
+                    Không có khách hàng nào
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredCustomers.map((customer) => (
+                  <TableRow key={customer.userId}>
+                    <TableCell className="font-medium">
+                      {customer.fullName}
+                    </TableCell>
+                    <TableCell>{customer.email}</TableCell>
+                    <TableCell>{customer.phoneNumber || 'N/A'}</TableCell>
+                    <TableCell>{getStatusBadge(customer.status)}</TableCell>
+                    <TableCell>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="bg-transparent">
-                          Xem chi tiết
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleViewDetails(customer)}
+                        >
+                          Chi tiết
                         </Button>
-                        <Button variant="outline" size="sm" className="bg-transparent">
-                          Lịch sử thuê
-                        </Button>
-                        {customer.riskLevel === "high" && (
-                          <Button variant="outline" size="sm" className="bg-transparent text-red-600 border-red-600">
-                            Xử lý cảnh báo
+
+                        {customer.status === 'pending' && (
+                          <Button
+                            size="sm"
+                            variant="default"
+                            onClick={() => {
+                              setSelectedCustomer(customer)
+                              setIsVerifyDialogOpen(true)
+                            }}
+                          >
+                            <UserCheck className="h-4 w-4 mr-1" />
+                            Duyệt
+                          </Button>
+                        )}
+
+                        {customer.status === 'active' && (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => {
+                              setSelectedCustomer(customer)
+                              setIsLockDialogOpen(true)
+                            }}
+                          >
+                            <Lock className="h-4 w-4 mr-1" />
+                            Khóa
+                          </Button>
+                        )}
+
+                        {customer.status === 'locked' && (
+                          <Button
+                            size="sm"
+                            variant="default"
+                            onClick={() =>
+                              handleUnlockCustomer(customer.userId)
+                            }
+                          >
+                            <Unlock className="h-4 w-4 mr-1" />
+                            Mở khóa
                           </Button>
                         )}
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </CardContent>
-            </Card>
-          </TabsContent>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
-          {/* Risk Customers Tab */}
-          <TabsContent value="risk" className="space-y-6">
-            <Card className="border-0 shadow-lg">
-              <CardHeader>
-                <CardTitle>Khách hàng có rủi ro</CardTitle>
-                <CardDescription>Danh sách khách hàng thường vi phạm hoặc gây hư hỏng</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {customers
-                  .filter((c) => c.riskLevel === "high")
-                  .map((customer) => (
-                    <Card key={customer.id} className="border-2 border-red-200 shadow-sm">
-                      <CardContent className="p-6">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                              <AlertTriangle className="w-6 h-6 text-red-600" />
-                            </div>
-                            <div>
-                              <div className="font-bold text-lg">{customer.name}</div>
-                              <div className="text-sm text-muted-foreground">Mã: {customer.id}</div>
-                            </div>
-                          </div>
-                          <Badge className="bg-red-50 text-red-700">Rủi ro cao</Badge>
-                        </div>
+      {/* Detail Dialog */}
+      <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Chi tiết khách hàng</DialogTitle>
+            <DialogDescription>
+              Thông tin chi tiết của {selectedCustomer?.fullName}
+            </DialogDescription>
+          </DialogHeader>
 
-                        <div className="p-4 bg-red-50 border border-red-200 rounded-xl mb-4">
-                          <div className="font-medium text-red-900 mb-2">Vấn đề ghi nhận:</div>
-                          <div className="text-sm text-red-800">{customer.issues}</div>
-                        </div>
+          {selectedCustomer && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">User ID</Label>
+                  <p className="font-medium">{selectedCustomer.userId}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Trạng thái</Label>
+                  <div className="mt-1">
+                    {getStatusBadge(selectedCustomer.status)}
+                  </div>
+                </div>
+              </div>
 
-                        <div className="grid md:grid-cols-3 gap-4 mb-4">
-                          <div>
-                            <div className="text-sm text-muted-foreground">Tổng chuyến</div>
-                            <div className="font-medium">{customer.totalRentals}</div>
-                          </div>
-                          <div>
-                            <div className="text-sm text-muted-foreground">Đánh giá</div>
-                            <div className="font-medium text-red-600">{customer.rating}/5</div>
-                          </div>
-                          <div>
-                            <div className="text-sm text-muted-foreground">Tổng chi tiêu</div>
-                            <div className="font-medium">{(customer.totalSpent / 1000000).toFixed(1)}M</div>
-                          </div>
-                        </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Họ tên</Label>
+                  <p className="font-medium">{selectedCustomer.fullName}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Username</Label>
+                  <p className="font-medium">{selectedCustomer.userName}</p>
+                </div>
+              </div>
 
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="bg-transparent text-red-600 border-red-600 hover:bg-red-50"
-                          >
-                            Tạm khóa tài khoản
-                          </Button>
-                          <Button variant="outline" size="sm" className="bg-transparent">
-                            Gửi cảnh báo
-                          </Button>
-                          <Button variant="outline" size="sm" className="bg-transparent">
-                            Xem chi tiết
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-              </CardContent>
-            </Card>
-          </TabsContent>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Email</Label>
+                  <p className="font-medium">{selectedCustomer.email}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Số điện thoại</Label>
+                  <p className="font-medium">
+                    {selectedCustomer.phoneNumber || 'N/A'}
+                  </p>
+                </div>
+              </div>
 
-          {/* Complaints Tab */}
-          <TabsContent value="complaints" className="space-y-6">
-            <Card className="border-0 shadow-lg">
-              <CardHeader>
-                <CardTitle>Khiếu nại từ khách hàng</CardTitle>
-                <CardDescription>Xử lý và theo dõi khiếu nại</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {complaints.map((complaint) => (
-                  <Card
-                    key={complaint.id}
-                    className={`border shadow-sm ${complaint.status === "pending" ? "border-l-4 border-l-yellow-500" : ""}`}
-                  >
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <div className="font-bold text-lg mb-1">{complaint.customer}</div>
-                          <div className="text-sm text-muted-foreground">Mã: {complaint.id}</div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge
-                            className={
-                              complaint.priority === "high" ? "bg-red-50 text-red-700" : "bg-yellow-50 text-yellow-700"
-                            }
-                          >
-                            {complaint.priority === "high" ? "Ưu tiên cao" : "Ưu tiên TB"}
-                          </Badge>
-                          <Badge
-                            className={
-                              complaint.status === "pending"
-                                ? "bg-yellow-50 text-yellow-700"
-                                : "bg-green-50 text-green-700"
-                            }
-                          >
-                            {complaint.status === "pending" ? "Đang xử lý" : "Đã giải quyết"}
-                          </Badge>
-                        </div>
-                      </div>
+              <div>
+                <Label className="text-muted-foreground">Địa chỉ</Label>
+                <p className="font-medium">
+                  {selectedCustomer.address || 'N/A'}
+                </p>
+              </div>
 
-                      <div className="p-4 bg-surface rounded-xl mb-4">
-                        <div className="text-sm text-muted-foreground mb-1">Nội dung khiếu nại:</div>
-                        <div className="font-medium">{complaint.issue}</div>
-                      </div>
+              <div>
+                <Label className="text-muted-foreground">Ngày sinh</Label>
+                <p className="font-medium">{selectedCustomer.dob || 'N/A'}</p>
+              </div>
 
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm text-muted-foreground">Ngày: {complaint.date}</div>
-                        <div className="flex gap-2">
-                          {complaint.status === "pending" ? (
-                            <>
-                              <Button size="sm" className="bg-gradient-to-r from-blue-500 to-green-500 text-white">
-                                <CheckCircle className="mr-2 w-4 h-4" />
-                                Giải quyết
-                              </Button>
-                              <Button variant="outline" size="sm" className="bg-transparent">
-                                Chi tiết
-                              </Button>
-                            </>
-                          ) : (
-                            <Button variant="outline" size="sm" className="bg-transparent">
-                              Xem giải pháp
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
+              {selectedCustomer.cccdUrl && (
+                <div>
+                  <Label className="text-muted-foreground">CCCD</Label>
+                  <img
+                    src={selectedCustomer.cccdUrl}
+                    alt="CCCD"
+                    className="mt-2 max-h-48 rounded border"
+                  />
+                </div>
+              )}
+
+              {selectedCustomer.avatarUrl && (
+                <div>
+                  <Label className="text-muted-foreground">Avatar</Label>
+                  <img
+                    src={selectedCustomer.avatarUrl}
+                    alt="Avatar"
+                    className="mt-2 h-24 w-24 rounded-full border"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsDetailDialogOpen(false)}
+            >
+              Đóng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Lock Dialog */}
+      <Dialog open={isLockDialogOpen} onOpenChange={setIsLockDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Khóa tài khoản</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc muốn khóa tài khoản {selectedCustomer?.fullName}?
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="lockReason">Lý do khóa *</Label>
+              <Textarea
+                id="lockReason"
+                value={lockReason}
+                onChange={(e) => setLockReason(e.target.value)}
+                placeholder="Nhập lý do khóa tài khoản..."
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsLockDialogOpen(false)
+                setLockReason('')
+              }}
+            >
+              Hủy
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleLockCustomer}
+              disabled={!lockReason.trim()}
+            >
+              <Lock className="mr-2 h-4 w-4" />
+              Khóa tài khoản
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Verify Dialog */}
+      <Dialog open={isVerifyDialogOpen} onOpenChange={setIsVerifyDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Phê duyệt tài khoản</DialogTitle>
+            <DialogDescription>
+              Xác thực tài khoản cho {selectedCustomer?.fullName}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <p>Bạn muốn phê duyệt hay từ chối tài khoản này?</p>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsVerifyDialogOpen(false)}
+            >
+              Hủy
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => handleVerifyCustomer('locked')}
+            >
+              <XCircle className="mr-2 h-4 w-4" />
+              Từ chối
+            </Button>
+            <Button
+              variant="default"
+              onClick={() => handleVerifyCustomer('active')}
+            >
+              <CheckCircle className="mr-2 h-4 w-4" />
+              Phê duyệt
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
