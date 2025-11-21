@@ -56,6 +56,13 @@ export const API_ENDPOINTS = {
       `${API_CONFIG.GATEWAY_URL}/api/rental/feedbacks/renter/${renterId}`,
   },
 
+  RENTAL_CONTRACTS: {
+    GET_BY_RENTAL: (rentalId: string) =>
+      `${API_CONFIG.GATEWAY_URL}/api/rental/rental-contracts/by-rental/${rentalId}`,
+    UPDATE_SIGNATURES: (contractId: number) =>
+      `${API_CONFIG.GATEWAY_URL}/api/rental/rental-contracts/${contractId}/signatures`,
+  },
+
   // Analytics - Route: /api/rental/{everything} -> Backend: /api/{everything} (Port 7015) - ✅ CẦN Bearer token
   ANALYTICS: {
     GET_RENTER_ANALYTICS: (renterId: string) =>
