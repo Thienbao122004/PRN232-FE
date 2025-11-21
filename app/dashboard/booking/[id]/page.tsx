@@ -27,7 +27,7 @@ import {
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { vehicleService, type VehicleResponse, type VehicleTypeResponse } from "@/services/vehicleService"
-import { branchService, type BranchResponse } from "@/services/branchService"
+import { branchService, type Branch } from "@/services/branchService"
 import { rentalOrderService, type CreateRentalOrderRequest } from "@/services/rentalOrderService"
 import { userService } from "@/services/userService"
 import { useToast } from "@/hooks/use-toast"
@@ -56,9 +56,9 @@ export default function BookingDetailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [vehicle, setVehicle] = useState<VehicleResponse | null>(null)
   const [vehicleType, setVehicleType] = useState<VehicleTypeResponse | null>(null)
-  const [startBranch, setStartBranch] = useState<BranchResponse | null>(null)
-  const [endBranch, setEndBranch] = useState<BranchResponse | null>(null)
-  const [allBranches, setAllBranches] = useState<BranchResponse[]>([])
+  const [startBranch, setStartBranch] = useState<Branch | null>(null)
+  const [endBranch, setEndBranch] = useState<Branch | null>(null)
+  const [allBranches, setAllBranches] = useState<Branch[]>([])
   const [userId, setUserId] = useState<string>("")
 
   const [bookingData, setBookingData] = useState({
@@ -95,10 +95,8 @@ export default function BookingDetailPage() {
       }
 
       // Load vehicle, type, branches
-      const [vehicleRes, branchesRes] = await Promise.all([
-        vehicleService.getVehicleById(vehicleId),
-        branchService.getAllBranches(),
-      ])
+      const vehicleRes = await vehicleService.getVehicleById(vehicleId)
+      const branchesData = await branchService.getAllBranches()
 
       if (vehicleRes.success && vehicleRes.data) {
         setVehicle(vehicleRes.data)
@@ -112,15 +110,14 @@ export default function BookingDetailPage() {
         throw new Error("Không thể tải thông tin xe")
       }
 
-      if (branchesRes.success && branchesRes.data) {
-        setAllBranches(branchesRes.data)
-        
-        // Load start branch
-        if (branchId) {
-          const branch = branchesRes.data.find(b => b.branchId === branchId)
-          setStartBranch(branch || null)
-          setEndBranch(branch || null)
-        }
+      console.log("Branches loaded:", branchesData)
+      setAllBranches(branchesData)
+      
+      // Load start branch
+      if (branchId) {
+        const branch = branchesData.find(b => b.branchId === branchId)
+        setStartBranch(branch || null)
+        setEndBranch(branch || null)
       }
     } catch (error) {
       toast({
@@ -466,11 +463,13 @@ export default function BookingDetailPage() {
                       {startBranch && (
                         <div className="bg-green-50 p-2 rounded border border-green-200">
                           <p className="text-xs text-gray-700">
-                            <span className="font-medium">Địa chỉ:</span> {startBranch.address}, {startBranch.city}
+                            <span className="font-medium">Địa chỉ:</span> {startBranch.address}{startBranch.city ? `, ${startBranch.city}` : ''}
                           </p>
-                          <p className="text-xs text-gray-700">
-                            <span className="font-medium">SĐT:</span> {startBranch.contactNumber}
-                          </p>
+                          {startBranch.contactNumber && (
+                            <p className="text-xs text-gray-700">
+                              <span className="font-medium">SĐT:</span> {startBranch.contactNumber}
+                            </p>
+                          )}
                         </div>
                       )}
                     </div>
@@ -495,11 +494,13 @@ export default function BookingDetailPage() {
                       {endBranch && (
                         <div className="bg-green-50 p-2 rounded border border-green-200">
                           <p className="text-xs text-gray-700">
-                            <span className="font-medium">Địa chỉ:</span> {endBranch.address}, {endBranch.city}
+                            <span className="font-medium">Địa chỉ:</span> {endBranch.address}{endBranch.city ? `, ${endBranch.city}` : ''}
                           </p>
-                          <p className="text-xs text-gray-700">
-                            <span className="font-medium">SĐT:</span> {endBranch.contactNumber}
-                          </p>
+                          {endBranch.contactNumber && (
+                            <p className="text-xs text-gray-700">
+                              <span className="font-medium">SĐT:</span> {endBranch.contactNumber}
+                            </p>
+                          )}
                         </div>
                       )}
                     </div>
