@@ -110,8 +110,12 @@ export default function RentalDetailPage() {
     switch (rental.status) {
       case "Pending":
         if (contract) {
-          if (contract.signedByRenter === 0 || contract.signedByStaff === 0) {
-            return 2 
+          // Kiểm tra cả staff và renter đã ký chưa
+          if (contract.signedByRenter === 0) {
+            return 2 // Đang chờ khách hàng ký
+          }
+          if (contract.signedByStaff === 0) {
+            return 2 // Đang chờ staff ký
           }
           const hasDeposit = payments.some(p => p.transactionRef?.includes("DEPOSIT") && p.status === "Paid")
           return hasDeposit ? 4 : 3
@@ -339,6 +343,21 @@ export default function RentalDetailPage() {
                     <Circle className="w-5 h-5 text-gray-300" />
                   )}
                 </div>
+                
+                {/* Thông báo chờ staff ký */}
+                {contract.signedByRenter === 1 && contract.signedByStaff === 0 && (
+                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-yellow-900">Đang chờ nhân viên ký hợp đồng</p>
+                        <p className="text-sm text-yellow-700 mt-1">
+                          Hợp đồng cần được nhân viên xác nhận trước khi bạn có thể thanh toán tiền cọc
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
@@ -449,14 +468,16 @@ export default function RentalDetailPage() {
                 </Button>
               )}
 
-              {/* Step 3: Pay Deposit */}
-              {rental.status === "Pending" && contract && contract.signedByRenter === 1 && !depositPayment && (
+              {/* Step 3: Pay Deposit - Chỉ cho phép khi CẢ staff VÀ renter đã ký */}
+              {rental.status === "Pending" && contract && !depositPayment && (
                 <Button 
                   onClick={handlePayDeposit}
-                  className="w-full bg-white text-blue-600 hover:bg-blue-50"
+                  disabled={contract.signedByRenter === 0 || contract.signedByStaff === 0}
+                  className="w-full bg-white text-blue-600 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={contract.signedByStaff === 0 ? "Đang chờ nhân viên ký hợp đồng" : contract.signedByRenter === 0 ? "Vui lòng ký hợp đồng trước" : ""}
                 >
                   <CreditCard className="w-4 h-4 mr-2" />
-                  Thanh toán đặt cọc
+                  {contract.signedByStaff === 0 ? "Chờ staff ký HĐ" : "Thanh toán đặt cọc"}
                 </Button>
               )}
 

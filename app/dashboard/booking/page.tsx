@@ -15,7 +15,7 @@ import { Zap, MapPin, Search, ArrowLeft, Loader2, Star, Battery, Gauge } from "l
 import Link from "next/link"
 import { userService, type UserProfileResponse } from "@/services/userService"
 import { vehicleService, type VehicleResponse, type VehicleTypeResponse } from "@/services/vehicleService"
-import { branchService, type BranchResponse } from "@/services/branchService"
+import { branchService, type Branch } from "@/services/branchService"
 import { API_CONFIG } from "@/lib/api-config"
 import { useToast } from "@/hooks/use-toast"
 
@@ -50,7 +50,7 @@ export default function BookingPage() {
   const [selectedTime, setSelectedTime] = useState<dayjs.Dayjs | null>(null)
   
   // API Data
-  const [branches, setBranches] = useState<BranchResponse[]>([])
+  const [branches, setBranches] = useState<Branch[]>([])
   const [vehicles, setVehicles] = useState<VehicleResponse[]>([])
   const [vehicleTypes, setVehicleTypes] = useState<VehicleTypeResponse[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -62,29 +62,40 @@ export default function BookingPage() {
   const loadAllData = async () => {
     setIsLoading(true)
     try {
-      // Load song song tất cả dữ liệu
-      const [profileRes, branchesRes, vehiclesRes, typesRes] = await Promise.all([
-        userService.getCurrentProfile().catch(() => ({ success: false, data: null })),
-        branchService.getAllBranches().catch(() => ({ success: false, data: [] })),
-        vehicleService.getVehiclesByStatus("Available").catch(() => ({ success: false, data: [] })),
-        vehicleService.getAllVehicleTypes().catch(() => ({ success: false, data: [] })),
-      ])
-
+      // Load user profile
+      const profileRes = await userService.getCurrentProfile().catch(() => ({ success: false, data: null }))
       if (profileRes.success && profileRes.data) {
         setUserProfile(profileRes.data)
       }
 
-      if (branchesRes.success && branchesRes.data) {
-        setBranches(branchesRes.data)
-      }
+      // Load branches - returns Branch[] directly (not wrapped in ApiResponse)
+      const branchesData = await branchService.getAllBranches().catch((err) => {
+        console.error("Load branches error:", err)
+        return []
+      })
+      console.log("Branches loaded:", branchesData)
+      setBranches(branchesData)
 
+      // Load vehicles - returns ApiResponse<VehicleResponse[]>
+      const vehiclesRes = await vehicleService.getVehiclesByStatus("Available").catch((err) => {
+        console.error("Load vehicles error:", err)
+        return { success: false, data: [] }
+      })
+      console.log("Vehicles loaded:", vehiclesRes)
       if (vehiclesRes.success && vehiclesRes.data) {
         setVehicles(vehiclesRes.data)
       }
 
+      // Load vehicle types - returns ApiResponse<VehicleTypeResponse[]>
+      const typesRes = await vehicleService.getAllVehicleTypes().catch((err) => {
+        console.error("Load vehicle types error:", err)
+        return { success: false, data: [] }
+      })
+      console.log("Vehicle types loaded:", typesRes)
       if (typesRes.success && typesRes.data) {
         setVehicleTypes(typesRes.data)
       }
+
     } catch (error) {
       console.error("Load data error:", error)
       toast({
@@ -289,7 +300,7 @@ export default function BookingPage() {
                         !searchQuery || 
                         branch.branchName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                         branch.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        branch.city.toLowerCase().includes(searchQuery.toLowerCase())
+                        (branch.city || '').toLowerCase().includes(searchQuery.toLowerCase())
                       )
                       .map((branch) => (
                         <div
